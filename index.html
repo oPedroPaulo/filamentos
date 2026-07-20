@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Print Control & Pricing - Gestão e Precificação 3D</title>
+    <!-- Fontes Google & Ícones FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Navegação / Cabeçalho -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-cube"></i>
+                </div>
+                <div>
+                    <h1>Print3D <span>Control</span></h1>
+                    <p class="subtitle">Gestão de Filamentos e Precificação Industrial</p>
+                </div>
+            </div>
+
+            <nav class="nav-tabs">
+                <button class="tab-btn active" data-tab="tab-estoque">
+                    <i class="fa-solid fa-boxes-stacked"></i> Estoque de Filamentos
+                </button>
+                <button class="tab-btn" data-tab="tab-calculadora">
+                    <i class="fa-solid fa-calculator"></i> Calculadora de Preços
+                </button>
+            </nav>
+        </header>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="app-main">
+
+            <!-- ABA 1: ESTOQUE DE FILAMENTOS -->
+            <section id="tab-estoque" class="tab-content active">
+                <div class="grid-two-columns">
+                    
+                    <!-- Cadastro -->
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-plus-circle"></i> Cadastrar Novo Filamento</h2>
+                            <p>Registre os detalhes e custos do carretel para uso no fatiamento.</p>
+                        </div>
+
+                        <form id="form-filamento">
+                            <input type="hidden" id="filamento-id">
+                            
+                            <div class="form-group">
+                                <label for="marca"><i class="fa-solid fa-industry"></i> Marca e Linha</label>
+                                <input type="text" id="marca" placeholder="Ex: Creality, eSUN, Voolt3D" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="tipo"><i class="fa-solid fa-layer-group"></i> Tipo de Material</label>
+                                    <select id="tipo" required>
+                                        <option value="PLA">PLA</option>
+                                        <option value="PETG">PETG</option>
+                                        <option value="ABS">ABS</option>
+                                        <option value="TPU">TPU</option>
+                                        <option value="ASA">ASA</option>
+                                        <option value="PVA">PVA</option>
+                                        <option value="Resina">Resina UV</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="cor-nome"><i class="fa-solid fa-palette"></i> Nome da Cor</label>
+                                    <input type="text" id="cor-nome" placeholder="Ex: Preto Silk, Azul Celeste" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="cor-hex"><i class="fa-solid fa-eye-dropper"></i> Cor da Tag</label>
+                                    <div class="color-picker-wrapper">
+                                        <input type="color" id="cor-hex" value="#2563eb">
+                                        <span id="color-hex-text">#2563eb</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="data-compra"><i class="fa-solid fa-calendar-day"></i> Data da Compra</label>
+                                    <input type="date" id="data-compra" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="peso-total"><i class="fa-solid fa-weight-hanging"></i> Peso do Carretel (g)</label>
+                                    <input type="number" id="peso-total" placeholder="1000" value="1000" min="1" step="1" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="preco-pago"><i class="fa-solid fa-brazilian-real-sign"></i> Preço Pago (R$)</label>
+                                    <input type="number" id="preco-pago" placeholder="110.00" min="0.01" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="btn-salvar-filamento">
+                                    <i class="fa-solid fa-floppy-disk"></i> Salvar Filamento
+                                </button>
+                                <button type="button" class="btn btn-secondary hidden" id="btn-cancelar-edicao">
+                                    Cancelar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Lista de Estoque -->
+                    <div class="card list-card">
+                        <div class="card-header space-between">
+                            <div>
+                                <h2><i class="fa-solid fa-list-check"></i> Meus Filamentos</h2>
+                                <p>Carretéis disponíveis no seu inventário</p>
+                            </div>
+                            
+                            <!-- Ações de Backup e Contador -->
+                            <div class="header-actions">
+                                <button class="btn btn-secondary btn-sm" id="btn-exportar" title="Baixar backup em arquivo JSON">
+                                    <i class="fa-solid fa-download"></i> Exportar
+                                </button>
+                                <button class="btn btn-secondary btn-sm" id="btn-importar" title="Carregar backup em arquivo JSON">
+                                    <i class="fa-solid fa-upload"></i> Importar
+                                </button>
+                                <input type="file" id="input-importar-json" accept=".json" class="hidden">
+                                <span class="badge badge-info" id="count-filamentos">0 Cadastrados</span>
+                            </div>
+                        </div>
+
+                        <div class="search-bar">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="input-busca-filamento" placeholder="Buscar por marca, material ou cor...">
+                        </div>
+
+                        <div class="filamentos-grid" id="container-filamentos">
+                            <!-- Cards inseridos dinamicamente via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- ABA 2: CALCULADORA DE PRECIFICAÇÃO -->
+            <section id="tab-calculadora" class="tab-content">
+                <div class="grid-calc-layout">
+                    
+                    <!-- Entradas da Impressão -->
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-sliders"></i> Parâmetros do Orçamento</h2>
+                            <p>Insira os dados do fatiador para calcular o custo exato da impressão.</p>
+                        </div>
+
+                        <form id="form-calculadora" onsubmit="return false;">
+                            
+                            <div class="form-group">
+                                <label for="select-filamento-calc"><i class="fa-solid fa-spool"></i> Filamento Utilizado</label>
+                                <select id="select-filamento-calc" required>
+                                    <option value="">-- Selecione um filamento do estoque --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="peso-usado"><i class="fa-solid fa-scale-balanced"></i> Peso da Peça (g)</label>
+                                    <input type="number" id="peso-usado" placeholder="Ex: 85" min="0.1" step="0.1" value="85" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tempo-horas"><i class="fa-solid fa-clock"></i> Tempo de Impressão</label>
+                                    <div class="time-inputs">
+                                        <input type="number" id="tempo-horas" placeholder="Horas" min="0" value="4" required>
+                                        <span>h</span>
+                                        <input type="number" id="tempo-minutos" placeholder="Min" min="0" max="59" value="30" required>
+                                        <span>min</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-divider">
+                                <span>Custos Operacionais & Configurações</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="potencia-watts">
+                                        <i class="fa-solid fa-bolt"></i> Potência Impressora (W)
+                                    </label>
+                                    <input type="number" id="potencia-watts" value="200" min="1" step="1">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="tarifa-kwh">
+                                        <i class="fa-solid fa-plug"></i> Tarifa Energia (R$/kWh)
+                                    </label>
+                                    <input type="number" id="tarifa-kwh" value="0.90" min="0" step="0.01">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="taxa-depreciacao">
+                                        <i class="fa-solid fa-wrench"></i> Desgaste/Manutenção (R$/h)
+                                    </label>
+                                    <input type="number" id="taxa-depreciacao" value="1.50" min="0" step="0.10">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="taxa-falha">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Margem para Falhas (%)
+                                    </label>
+                                    <input type="number" id="taxa-falha" value="10" min="0" step="1">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="custo-mao-obra"><i class="fa-solid fa-user-gear"></i> Mão de Obra / Pós-Proc (R$)</label>
+                                    <input type="number" id="custo-mao-obra" value="15.00" min="0" step="0.50">
+                                </div>
+
+                                <div class="form-group highlight-input">
+                                    <label for="margem-lucro"><i class="fa-solid fa-chart-line"></i> Margem de Lucro (%)</label>
+                                    <input type="number" id="margem-lucro" value="200" min="0" step="5">
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- Demonstrativo de Resultado -->
+                    <div class="card result-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-receipt"></i> Demonstrativo do Orçamento</h2>
+                            <p>Detalhamento de custos e preço final de venda</p>
+                        </div>
+
+                        <div class="price-hero">
+                            <span class="price-label">Preço Sugerido de Venda</span>
+                            <div class="price-value" id="res-preco-venda">R$ 0,00</div>
+                            <div class="price-badge" id="res-badge-lucro">Lucro Líquido: R$ 0,00 (+0%)</div>
+                        </div>
+
+                        <div class="breakdown-list">
+                            <div class="breakdown-item">
+                                <span class="item-title"><i class="fa-solid fa-spool color-icon1"></i> Filamento Gastos</span>
+                                <span class="item-value" id="res-custo-filamento">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item">
+                                <span class="item-title"><i class="fa-solid fa-bolt color-icon2"></i> Energia Elétrica</span>
+                                <span class="item-value" id="res-custo-energia">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item">
+                                <span class="item-title"><i class="fa-solid fa-screws-tilting color-icon3"></i> Desgaste da Impressora</span>
+                                <span class="item-value" id="res-custo-manutencao">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item subtotal">
+                                <span class="item-title">Subtotal de Custos Diretos</span>
+                                <span class="item-value" id="res-subtotal-direto">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item">
+                                <span class="item-title"><i class="fa-solid fa-shield-cat color-icon4"></i> Cobertura de Falhas/Perdas</span>
+                                <span class="item-value" id="res-custo-falhas">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item">
+                                <span class="item-title"><i class="fa-solid fa-hand-holding-hand color-icon5"></i> Mão de Obra / Preparação</span>
+                                <span class="item-value" id="res-custo-mao-obra">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item total-cost">
+                                <span class="item-title">CUSTO TOTAL DE PRODUÇÃO</span>
+                                <span class="item-value" id="res-custo-total">R$ 0,00</span>
+                            </div>
+
+                            <div class="breakdown-item profit-row">
+                                <span class="item-title"><i class="fa-solid fa-sack-dollar color-icon6"></i> Lucro Líquido Real</span>
+                                <span class="item-value" id="res-lucro-liquido">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <div class="summary-footer-actions">
+                            <button class="btn btn-outline" id="btn-copiar-resumo">
+                                <i class="fa-solid fa-copy"></i> Copiar Orçamento Resumido
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
