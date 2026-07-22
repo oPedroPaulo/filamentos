@@ -1,11 +1,11 @@
-// ESTADO E LOCALSTORAGE
+// ESTADO E LOCALSTORAGE REV MAKER
 let filamentos = [];
 
 // REFS DO DOM
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
-// Formulário de Cadastro
+// Form Cadastro
 const formFilamento = document.getElementById('form-filamento');
 const inputId = document.getElementById('filamento-id');
 const inputMarca = document.getElementById('marca');
@@ -24,12 +24,8 @@ const containerFilamentos = document.getElementById('container-filamentos');
 const countFilamentos = document.getElementById('count-filamentos');
 const inputBuscaFilamento = document.getElementById('input-busca-filamento');
 
-// Backup (Importar / Exportar)
-const btnExportar = document.getElementById('btn-exportar');
-const btnImportar = document.getElementById('btn-importar');
-const inputImportarJson = document.getElementById('input-importar-json');
-
 // Calculadora
+const inputNomeProjeto = document.getElementById('nome-projeto');
 const selectFilamentoCalc = document.getElementById('select-filamento-calc');
 const inputPesoUsado = document.getElementById('peso-usado');
 const inputTempoHoras = document.getElementById('tempo-horas');
@@ -85,9 +81,9 @@ function initColorPickerEvent() {
     });
 }
 
-// LOCALSTORAGE & DADOS
+// LOCALSTORAGE & CARREGAMENTO DE DADOS
 function carregarFilamentos() {
-    const data = localStorage.getItem('print3d_filamentos');
+    const data = localStorage.getItem('revmaker_filamentos');
     if (data) {
         filamentos = JSON.parse(data);
     } else {
@@ -107,7 +103,7 @@ function carregarFilamentos() {
                 marca: 'eSUN',
                 tipo: 'PETG',
                 corNome: 'Azul Celeste',
-                corHex: '#2563eb',
+                corHex: '#0022ff',
                 dataCompra: '2026-02-15',
                 pesoTotal: 1000,
                 precoPago: 125.00
@@ -120,10 +116,10 @@ function carregarFilamentos() {
 }
 
 function salvarNoLocalStorage() {
-    localStorage.setItem('print3d_filamentos', JSON.stringify(filamentos));
+    localStorage.setItem('revmaker_filamentos', JSON.stringify(filamentos));
 }
 
-// CADASTRO DE FILAMENTOS
+// FORMULÁRIO DE FILAMENTOS
 function initFormFilamentoEvents() {
     formFilamento.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -163,8 +159,8 @@ function initFormFilamentoEvents() {
 function resetarFormFilamento() {
     inputId.value = '';
     formFilamento.reset();
-    inputCorHex.value = '#2563eb';
-    colorHexText.textContent = '#2563EB';
+    inputCorHex.value = '#0022FF';
+    colorHexText.textContent = '#0022FF';
     inputDataCompra.valueAsDate = new Date();
     btnSalvarFilamento.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar Filamento';
     btnCancelarEdicao.classList.add('hidden');
@@ -292,7 +288,7 @@ function atualizarSelectCalculadora() {
 // MOTOR DA CALCULADORA DE PRECIFICAÇÃO
 function initCalculadoraEvents() {
     const inputs = [
-        selectFilamentoCalc, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
+        inputNomeProjeto, selectFilamentoCalc, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
         inputPotencia, inputTarifaKwh, inputTaxaDepreciacao, inputTaxaFalha,
         inputCustoMaoObra, inputMargemLucro
     ];
@@ -302,7 +298,7 @@ function initCalculadoraEvents() {
         input.addEventListener('change', calcularOrcamento3D);
     });
 
-    btnCopiarResumo.addEventListener('click', copiarResumoTexto);
+    btnCopiarResumo.addEventListener('click', copiarResumoCliente);
     calcularOrcamento3D();
 }
 
@@ -310,6 +306,7 @@ function calcularOrcamento3D() {
     const filamentoId = selectFilamentoCalc.value;
     const filamento = filamentos.find(f => f.id === filamentoId);
 
+    // 1. Custo de Material (Filamento)
     let custoFilamento = 0;
     if (filamento) {
         const custoGrama = filamento.precoPago / filamento.pesoTotal;
@@ -317,29 +314,42 @@ function calcularOrcamento3D() {
         custoFilamento = custoGrama * gramasUsadas;
     }
 
+    // 2. Tempo de Impressão em Horas
     const horas = parseFloat(inputTempoHoras.value) || 0;
     const minutos = parseFloat(inputTempoMinutos.value) || 0;
     const tempoTotalHoras = horas + (minutos / 60);
 
+    // 3. Custo de Energia Elétrica
     const potenciaKW = (parseFloat(inputPotencia.value) || 0) / 1000;
     const tarifaKwh = parseFloat(inputTarifaKwh.value) || 0;
     const custoEnergia = potenciaKW * tempoTotalHoras * tarifaKwh;
 
+    // 4. Depreciação / Manutenção (Isolada para adição direta no preço final)
     const taxaDepreciacaoHora = parseFloat(inputTaxaDepreciacao.value) || 0;
     const custoManutencao = taxaDepreciacaoHora * tempoTotalHoras;
 
-    const subtotalDireto = custoFilamento + custoEnergia + custoManutencao;
+    // 5. Subtotal de Insumos Diretos (Apenas Filamento + Energia)
+    const subtotalDireto = custoFilamento + custoEnergia;
 
+    // 6. Taxa de Falhas aplicada apenas sobre os insumos consumidos
     const taxaFalhaPercentual = (parseFloat(inputTaxaFalha.value) || 0) / 100;
     const custoFalhas = subtotalDireto * taxaFalhaPercentual;
 
+    // 7. Mão de Obra
     const custoMaoObra = parseFloat(inputCustoMaoObra.value) || 0;
 
-    const custoTotalProducao = subtotalDireto + custoFalhas + custoMaoObra;
+    // 8. Base de Custo para Margem de Lucro (Exclui a depreciação)
+    const custoBaseMargem = subtotalDireto + custoFalhas + custoMaoObra;
 
+    // 9. Custo Total Real de Produção (Para seu controle interno)
+    const custoTotalProducao = custoBaseMargem + custoManutencao;
+
+    // 10. Lucro Líquido (Calculado APENAS sobre a base, sem multiplicar a depreciação)
     const margemLucroPercentual = (parseFloat(inputMargemLucro.value) || 0) / 100;
-    const lucroLiquido = custoTotalProducao * margemLucroPercentual;
-    const precoVendaFinal = custoTotalProducao + lucroLiquido;
+    const lucroLiquido = custoBaseMargem * margemLucroPercentual;
+
+    // 11. Preço de Venda Final = Base de Custo + Lucro + Depreciação seca (1:1)
+    const precoVendaFinal = custoBaseMargem + lucroLiquido + custoManutencao;
 
     // ATUALIZAÇÃO DA TELA
     resCustoFilamento.textContent = formatarMoeda(custoFilamento);
@@ -356,38 +366,57 @@ function calcularOrcamento3D() {
     resBadgeLucro.textContent = `Lucro Líquido: ${formatarMoeda(lucroLiquido)} (+${margemExibicao}%)`;
 }
 
-function copiarResumoTexto() {
-    const filamentoSel = selectFilamentoCalc.options[selectFilamentoCalc.selectedIndex]?.text || 'N/A';
+// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL (SEM CUSTOS INTERNOS/MARGENS)
+function copiarResumoCliente() {
+    const nomeProjeto = inputNomeProjeto.value.trim() || 'Impressão Peça 3D';
+    const filamentoId = selectFilamentoCalc.value;
+    const filamento = filamentos.find(f => f.id === filamentoId);
+    
+    const materialTexto = filamento ? `${filamento.tipo} (${filamento.corNome})` : 'Material Especial 3D';
     const precoVenda = resPrecoVenda.textContent;
-    const custoTotal = resCustoTotal.textContent;
     const peso = inputPesoUsado.value;
     const tempoH = inputTempoHoras.value;
     const tempoM = inputTempoMinutos.value;
 
-    const texto = `📦 *ORÇAMENTO DE IMPRESSÃO 3D*
------------------------------------
-🧵 *Material:* ${filamentoSel}
-⚖️ *Peso Estimado:* ${peso}g
-⏱️ *Tempo de Impressão:* ${tempoH}h ${tempoM}min
-💰 *Custo de Produção:* ${custoTotal}
-🏷️ *VALOR FINAL SUGERIDO:* ${precoVenda}
------------------------------------
-Gerado por Print3D Control`;
+    const textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
+--------------------------------------------------
+📦 *Projeto:* ${nomeProjeto}
+💰 *VALOR FINAL:* ${precoVenda}
+--------------------------------------------------
+📌 *Prazo de Produção:* ~${tempoH}h ${tempoM}min
+📌 *Validade do Orçamento:* 7 dias
 
-    navigator.clipboard.writeText(texto).then(() => {
-        alert('Orçamento copiado para a área de transferência!');
+🚀 *Rev Maker - Impressão 3D e Projetos*
+Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
+
+    navigator.clipboard.writeText(textoCliente).then(() => {
+        alert('Orçamento para o CLIENTE copiado com sucesso! Pronto para colar no WhatsApp.');
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
     });
 }
 
-// BACKUP (EXPORTAR / IMPORTAR)
+// LÓGICA DE BACKUP E IMPORTAÇÃO
 function initBackupEvents() {
-    btnExportar.addEventListener('click', exportarFilamentos);
-    btnImportar.addEventListener('click', () => inputImportarJson.click());
-    inputImportarJson.addEventListener('change', importarFilamentos);
+    const btnExportar = document.getElementById('btn-exportar');
+    const btnImportar = document.getElementById('btn-importar');
+    const inputImportarJson = document.getElementById('input-importar-json');
+
+    if (btnExportar) {
+        btnExportar.addEventListener('click', exportarFilamentos);
+    }
+    
+    if (btnImportar && inputImportarJson) {
+        btnImportar.addEventListener('click', () => {
+            inputImportarJson.click();
+        });
+        
+        inputImportarJson.addEventListener('change', importarFilamentos);
+    }
 }
 
 function exportarFilamentos() {
-    if (filamentos.length === 0) {
+    if (!filamentos || filamentos.length === 0) {
         alert('Nenhum filamento cadastrado para exportar!');
         return;
     }
@@ -397,7 +426,7 @@ function exportarFilamentos() {
     const dataAtual = new Date().toISOString().split('T')[0];
 
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `backup_filamentos_${dataAtual}.json`);
+    downloadAnchor.setAttribute("download", `revmaker_filamentos_${dataAtual}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -408,17 +437,23 @@ function importarFilamentos(e) {
     if (!file) return;
 
     const reader = new FileReader();
+    
     reader.onload = function(event) {
         try {
             const dadosImportados = JSON.parse(event.target.result);
 
             if (!Array.isArray(dadosImportados)) {
-                throw new Error('O arquivo precisa conter uma lista válida de filamentos.');
+                throw new Error('O arquivo precisa conter uma lista de filamentos.');
             }
 
-            const estruturaValida = dadosImportados.every(item => item.marca && item.tipo && item.precoPago);
+            const estruturaValida = dadosImportados.every(item => 
+                item.hasOwnProperty('marca') && 
+                item.hasOwnProperty('tipo') && 
+                item.hasOwnProperty('precoPago')
+            );
+
             if (!estruturaValida) {
-                throw new Error('O formato dos dados do arquivo é inválido.');
+                throw new Error('O formato do arquivo JSON é incompatível.');
             }
 
             const confirma = confirm(`Deseja importar ${dadosImportados.length} filamento(s)? Isso substituirá o seu estoque atual.`);
@@ -435,7 +470,7 @@ function importarFilamentos(e) {
             alert('Erro ao importar arquivo: ' + err.message);
         }
 
-        inputImportarJson.value = '';
+        e.target.value = '';
     };
 
     reader.readAsText(file);

@@ -1,27 +1,34 @@
+/* CSS DESIGN SYSTEM - REV MAKER BRANDING */
+
 :root {
-    --bg-main: #0f172a;
-    --bg-card: #1e293b;
-    --bg-input: #334155;
-    --border-color: #475569;
+    /* Cores da Marca Rev Maker */
+    --rev-blue: #0022FF;
+    --rev-blue-hover: #001ad4;
+    --rev-purple: #7A0088;
+    --rev-purple-hover: #63006e;
+    --rev-red: #FF3000;
+    --rev-red-hover: #d92800;
+    --rev-silver: #a0a0a0;
+    --rev-silver-light: #e2e8f0;
     
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --primary-light: rgba(59, 130, 246, 0.15);
+    /* Dark Theme Pro */
+    --bg-main: #0b0f19;
+    --bg-card: #151d2a;
+    --bg-input: #212c3d;
+    --border-color: #2e3d54;
     
     --accent-green: #10b981;
     --accent-green-bg: rgba(16, 185, 129, 0.15);
-    --accent-amber: #f59e0b;
-    --accent-red: #ef4444;
     
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
     
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
     
-    --shadow-main: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    --shadow-main: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
     --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -49,7 +56,7 @@ body {
     gap: 24px;
 }
 
-/* HEADER & NAVEGAÇÃO */
+/* HEADER & BRANDING REV MAKER */
 .app-header {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -61,6 +68,19 @@ body {
     box-shadow: var(--shadow-main);
     flex-wrap: wrap;
     gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Top Glow Bar com cores da logo */
+.app-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--rev-blue) 0%, var(--rev-purple) 50%, var(--rev-red) 100%);
 }
 
 .brand {
@@ -69,33 +89,50 @@ body {
     gap: 16px;
 }
 
-.logo-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--primary), #8b5cf6);
-    border-radius: var(--radius-md);
+.logo-container {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.brand-logo {
+    height: 52px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.logo-fallback {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+}
+
+/* Letras Coloridas da Logo */
+.letter-r { color: var(--rev-blue); text-shadow: 0 0 12px rgba(0, 34, 255, 0.4); }
+.letter-e { color: var(--rev-purple); text-shadow: 0 0 12px rgba(122, 0, 136, 0.4); }
+.letter-v { color: var(--rev-red); text-shadow: 0 0 12px rgba(255, 48, 0, 0.4); }
+.text-maker { 
+    color: var(--rev-silver); 
+    font-weight: 700; 
+    letter-spacing: 2px;
+}
+
+.brand-text h1 {
     font-size: 1.5rem;
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.brand h1 {
-    font-size: 1.4rem;
     font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.brand h1 span {
-    color: var(--primary);
-}
-
-.brand .subtitle {
-    font-size: 0.85rem;
+.brand-text .subtitle {
+    font-size: 0.82rem;
     color: var(--text-secondary);
+    font-weight: 500;
 }
 
+/* NAVEGAÇÃO */
 .nav-tabs {
     display: flex;
     gap: 8px;
@@ -120,12 +157,17 @@ body {
     transition: var(--transition);
 }
 
-.tab-btn.active {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+.tab-btn:hover {
+    color: var(--text-primary);
 }
 
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--rev-blue), var(--rev-purple));
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 34, 255, 0.3);
+}
+
+/* TAB CONTENT SWITCHING */
 .tab-content {
     display: none;
 }
@@ -171,6 +213,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    color: var(--text-primary);
 }
 
 .card-header p {
@@ -178,6 +221,10 @@ body {
     color: var(--text-secondary);
     margin-top: 4px;
 }
+
+.icon-rev-blue { color: var(--rev-blue); }
+.icon-rev-purple { color: var(--rev-purple); }
+.icon-rev-red { color: var(--rev-red); }
 
 .space-between {
     display: flex;
@@ -225,8 +272,8 @@ select {
 }
 
 input:focus, select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    border-color: var(--rev-blue);
+    box-shadow: 0 0 0 3px rgba(0, 34, 255, 0.25);
 }
 
 .color-picker-wrapper {
@@ -239,7 +286,7 @@ input:focus, select:focus {
     padding: 4px 10px;
 }
 
-/* CORREÇÃO DO AVISO NO VS CODE (appearance) */
+/* FORMATO CORRETO DE APPEARANCE */
 input[type="color"] {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -282,13 +329,13 @@ input[type="color"] {
 }
 
 .highlight-input input {
-    background: rgba(59, 130, 246, 0.1);
-    border-color: var(--primary);
+    background: rgba(0, 34, 255, 0.12);
+    border-color: var(--rev-blue);
     font-weight: 700;
     color: #60a5fa;
 }
 
-/* BOTÕES E BADGES */
+/* BOTÕES E BADGES REV MAKER */
 .btn {
     padding: 11px 18px;
     border-radius: var(--radius-sm);
@@ -303,8 +350,30 @@ input[type="color"] {
     border: none;
 }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:hover { background: var(--primary-hover); }
+.btn-primary { 
+    background: linear-gradient(135deg, var(--rev-blue), var(--rev-purple)); 
+    color: white; 
+}
+.btn-primary:hover { 
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-primary-rev {
+    background: linear-gradient(135deg, var(--rev-red), var(--rev-purple));
+    color: white;
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 15px rgba(255, 48, 0, 0.3);
+}
+.btn-primary-rev:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 48, 0, 0.4);
+}
+
 .btn-secondary { background: var(--bg-input); color: var(--text-primary); }
 .btn-secondary:hover { background: var(--border-color); }
 
@@ -312,18 +381,6 @@ input[type="color"] {
     padding: 7px 12px;
     font-size: 0.8rem;
     border-radius: var(--radius-sm);
-}
-
-.btn-outline {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-primary);
-    width: 100%;
-}
-.btn-outline:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    color: #60a5fa;
 }
 
 .header-actions {
@@ -339,7 +396,7 @@ input[type="color"] {
     font-size: 0.75rem;
     font-weight: 700;
 }
-.badge-info { background: var(--primary-light); color: #60a5fa; }
+.badge-info { background: rgba(0, 34, 255, 0.2); color: #60a5fa; }
 
 .color-tag-badge {
     padding: 4px 10px;
@@ -385,7 +442,7 @@ input[type="color"] {
     transition: var(--transition);
 }
 
-.filament-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+.filament-card:hover { border-color: var(--rev-blue); transform: translateY(-2px); }
 
 .filament-card-header {
     display: flex;
@@ -423,10 +480,10 @@ input[type="color"] {
     padding: 4px 8px;
     border-radius: var(--radius-sm);
 }
-.btn-icon:hover { color: var(--accent-red); }
+.btn-icon:hover { color: var(--rev-red); }
 
 .btn-select-calc {
-    background: var(--primary-light);
+    background: rgba(0, 34, 255, 0.15);
     color: #60a5fa;
     border: none;
     font-size: 0.75rem;
@@ -435,12 +492,12 @@ input[type="color"] {
     border-radius: 12px;
     cursor: pointer;
 }
-.btn-select-calc:hover { background: var(--primary); color: white; }
+.btn-select-calc:hover { background: var(--rev-blue); color: white; }
 
-/* CARD DE RESULTADOS / DEMONSTRATIVO */
+/* CARD DE RESULTADOS E DEMONSTRATIVO */
 .price-hero {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.15));
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(0, 34, 255, 0.15), rgba(255, 48, 0, 0.15));
+    border: 1px solid rgba(0, 34, 255, 0.3);
     border-radius: var(--radius-md);
     padding: 20px;
     text-align: center;
@@ -450,8 +507,16 @@ input[type="color"] {
     gap: 6px;
 }
 
+.price-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    font-weight: 700;
+}
+
 .price-value {
-    font-size: 2.2rem;
+    font-size: 2.3rem;
     font-weight: 800;
     color: var(--accent-green);
 }
@@ -465,15 +530,35 @@ input[type="color"] {
     font-weight: 700;
 }
 
-.breakdown-list { display: flex; flex-direction: column; gap: 10px; }
+/* INTERNALS SECTION */
+.internal-breakdown {
+    background: rgba(11, 15, 25, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.breakdown-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.breakdown-list { display: flex; flex-direction: column; gap: 8px; }
 
 .breakdown-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.85rem;
-    padding: 6px 0;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    font-size: 0.82rem;
+    padding: 4px 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
 }
 
 .item-title { color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
@@ -486,15 +571,16 @@ input[type="color"] {
 .color-icon5 { color: #38bdf8; }
 .color-icon6 { color: #10b981; }
 
-.subtotal { border-top: 1px solid var(--border-color); padding-top: 10px; font-weight: 600; }
+.subtotal { border-top: 1px solid var(--border-color); padding-top: 8px; font-weight: 600; }
 .total-cost {
-    background: var(--bg-main);
-    padding: 10px 12px;
+    background: var(--bg-card);
+    padding: 8px 10px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-color);
+    margin-top: 4px;
 }
-.total-cost .item-value { font-size: 1rem; font-weight: 800; color: var(--accent-amber); }
-.profit-row .item-value { color: var(--accent-green); font-size: 1rem; font-weight: 800; }
+.total-cost .item-value { font-size: 0.95rem; font-weight: 800; color: var(--accent-amber); }
+.profit-row .item-value { color: var(--accent-green); font-size: 0.95rem; font-weight: 800; }
 
 .hidden { display: none !important; }
 
