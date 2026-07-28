@@ -26,7 +26,7 @@ const inputBuscaFilamento = document.getElementById('input-busca-filamento');
 
 // Calculadora & Custom Select
 const inputNomeProjeto = document.getElementById('nome-projeto');
-const selectFilamentoCalc = document.getElementById('select-filamento-calc'); // Hidden Input
+const selectFilamentoCalc = document.getElementById('select-filamento-calc');
 const customSelectWrapper = document.getElementById('custom-select-filamento');
 const selectTrigger = document.getElementById('select-trigger');
 const triggerContent = document.getElementById('trigger-content');
@@ -35,21 +35,34 @@ const customOptions = document.getElementById('custom-options');
 const inputPesoUsado = document.getElementById('peso-usado');
 const inputTempoHoras = document.getElementById('tempo-horas');
 const inputTempoMinutos = document.getElementById('tempo-minutos');
+const inputQtdPecas = document.getElementById('qtd-pecas');
+const inputQtdMinAtacado = document.getElementById('qtd-min-atacado');
+const inputMargemVarejo = document.getElementById('margem-varejo');
+const inputMargemAtacado = document.getElementById('margem-atacado');
+
 const inputPotencia = document.getElementById('potencia-watts');
 const inputTarifaKwh = document.getElementById('tarifa-kwh');
 const inputTaxaDepreciacao = document.getElementById('taxa-depreciacao');
 const inputTaxaFalha = document.getElementById('taxa-falha');
 const inputCustoMaoObra = document.getElementById('custo-mao-obra');
-const inputMargemLucro = document.getElementById('margem-lucro');
 
-// Resultados
-const resPrecoVenda = document.getElementById('res-preco-venda');
-const resBadgeLucro = document.getElementById('res-badge-lucro');
+// Resultados Varejo x Atacado DOM
+const resUnitVarejo = document.getElementById('res-unit-varejo');
+const resTotalVarejo = document.getElementById('res-total-varejo');
+const resSubVarejo = document.getElementById('res-sub-varejo');
+
+const resUnitAtacado = document.getElementById('res-unit-atacado');
+const resTotalAtacado = document.getElementById('res-total-atacado');
+const resSubAtacado = document.getElementById('res-sub-atacado');
+
+const lblMinAtacado = document.getElementById('lbl-min-atacado');
+const lblAppliedTier = document.getElementById('lbl-applied-tier');
+const cardPriceVarejo = document.getElementById('card-price-varejo');
+const cardPriceAtacado = document.getElementById('card-price-atacado');
+
 const resCustoFilamento = document.getElementById('res-custo-filamento');
 const resCustoEnergia = document.getElementById('res-custo-energia');
 const resCustoManutencao = document.getElementById('res-custo-manutencao');
-const resSubtotalDireto = document.getElementById('res-subtotal-direto');
-const resCustoFalhas = document.getElementById('res-custo-falhas');
 const resCustoMaoObra = document.getElementById('res-custo-mao-obra');
 const resCustoTotal = document.getElementById('res-custo-total');
 const resLucroLiquido = document.getElementById('res-lucro-liquido');
@@ -60,6 +73,9 @@ const resBoxInsumos = document.getElementById('res-box-insumos');
 const resBoxPoupanca = document.getElementById('res-box-poupanca');
 const resBoxReinvestimento = document.getElementById('res-box-reinvestimento');
 const resBoxBolso = document.getElementById('res-box-bolso');
+
+// Guardar os valores calculados para a função de cópia
+let calcCache = {};
 
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
@@ -328,7 +344,6 @@ function atualizarSelectCalculadora() {
         customOptions.appendChild(optionDiv);
     });
 
-    // Mantém a seleção atual se existir, ou seleciona o primeiro
     const valorAtual = selectFilamentoCalc.value;
     if (valorAtual && filamentos.some(f => f.id === valorAtual)) {
         selecionarFilamentoCustom(valorAtual);
@@ -343,12 +358,10 @@ function selecionarFilamentoCustom(id) {
 
     selectFilamentoCalc.value = filamento.id;
 
-    // Destaca a opção selecionada na lista
     document.querySelectorAll('.custom-option').forEach(opt => {
         opt.classList.toggle('selected', opt.getAttribute('data-id') === id);
     });
 
-    // Atualiza o Gatilho com a Bolinha da Cor + Texto
     const precoGrama = (filamento.precoPago / filamento.pesoTotal).toFixed(3);
     triggerContent.innerHTML = `
         <span class="color-swatch-circle" style="background-color: ${filamento.corHex};"></span>
@@ -358,12 +371,13 @@ function selecionarFilamentoCustom(id) {
     calcularOrcamento3D();
 }
 
-// MOTOR DA CALCULADORA DE PRECIFICAÇÃO
+// MOTOR DA CALCULADORA DE PRECIFICAÇÃO (VAREJO X ATACADO)
 function initCalculadoraEvents() {
     const inputs = [
         inputNomeProjeto, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
+        inputQtdPecas, inputQtdMinAtacado, inputMargemVarejo, inputMargemAtacado,
         inputPotencia, inputTarifaKwh, inputTaxaDepreciacao, inputTaxaFalha,
-        inputCustoMaoObra, inputMargemLucro
+        inputCustoMaoObra
     ];
 
     inputs.forEach(input => {
@@ -379,106 +393,181 @@ function calcularOrcamento3D() {
     const filamentoId = selectFilamentoCalc.value;
     const filamento = filamentos.find(f => f.id === filamentoId);
 
-    // 1. Custo de Material
-    let custoFilamento = 0;
+    // Quantidades e Margens
+    const qtdPecas = Math.max(1, parseInt(inputQtdPecas.value) || 1);
+    const qtdMinAtacado = Math.max(2, parseInt(inputQtdMinAtacado.value) || 5);
+    const margemVarejoPercentual = (parseFloat(inputMargemVarejo.value) || 0) / 100;
+    const margemAtacadoPercentual = (parseFloat(inputMargemAtacado.value) || 0) / 100;
+
+    // 1. Custo de Material Unitário
+    let custoFilamentoUnit = 0;
     if (filamento) {
         const custoGrama = filamento.precoPago / filamento.pesoTotal;
         const gramasUsadas = parseFloat(inputPesoUsado.value) || 0;
-        custoFilamento = custoGrama * gramasUsadas;
+        custoFilamentoUnit = custoGrama * gramasUsadas;
     }
 
-    // 2. Tempo de Impressão em Horas
+    // 2. Tempo de Impressão em Horas (Unitário)
     const horas = parseFloat(inputTempoHoras.value) || 0;
     const minutos = parseFloat(inputTempoMinutos.value) || 0;
-    const tempoTotalHoras = horas + (minutos / 60);
+    const tempoTotalHorasUnit = horas + (minutos / 60);
 
-    // 3. Custo de Energia Elétrica
+    // 3. Custo de Energia Elétrica (Unitário)
     const potenciaKW = (parseFloat(inputPotencia.value) || 0) / 1000;
     const tarifaKwh = parseFloat(inputTarifaKwh.value) || 0;
-    const custoEnergia = potenciaKW * tempoTotalHoras * tarifaKwh;
+    const custoEnergiaUnit = potenciaKW * tempoTotalHorasUnit * tarifaKwh;
 
-    // 4. Depreciação / Manutenção (Seco)
+    // 4. Depreciação / Manutenção (Unitário)
     const taxaDepreciacaoHora = parseFloat(inputTaxaDepreciacao.value) || 0;
-    const custoManutencao = taxaDepreciacaoHora * tempoTotalHoras;
+    const custoManutencaoUnit = taxaDepreciacaoHora * tempoTotalHorasUnit;
 
-    // 5. Subtotal Direto de Insumos
-    const subtotalDireto = custoFilamento + custoEnergia;
+    // 5. Subtotal Direto Insumos
+    const subtotalDiretoUnit = custoFilamentoUnit + custoEnergiaUnit;
 
-    // 6. Taxa de Falhas
+    // 6. Taxa de Falhas (Unitário)
     const taxaFalhaPercentual = (parseFloat(inputTaxaFalha.value) || 0) / 100;
-    const custoFalhas = subtotalDireto * taxaFalhaPercentual;
+    const custoFalhasUnit = subtotalDiretoUnit * taxaFalhaPercentual;
 
-    // 7. Mão de Obra
-    const custoMaoObra = parseFloat(inputCustoMaoObra.value) || 0;
+    // 7. Mão de Obra (Unitário)
+    const custoMaoObraUnit = parseFloat(inputCustoMaoObra.value) || 0;
 
-    // 8. Base de Custo para Lucro
-    const custoBaseMargem = subtotalDireto + custoFalhas + custoMaoObra;
+    // 8. Base de Custo para Lucro (Unitário)
+    const custoBaseMargemUnit = subtotalDiretoUnit + custoFalhasUnit + custoMaoObraUnit;
 
-    // 9. Custo Total de Produção
-    const custoTotalProducao = custoBaseMargem + custoManutencao;
+    // 9. Custo Total de Produção Unitário
+    const custoTotalProducaoUnit = custoBaseMargemUnit + custoManutencaoUnit;
 
-    // 10. Lucro Líquido
-    const margemLucroPercentual = (parseFloat(inputMargemLucro.value) || 0) / 100;
-    const lucroLiquido = custoBaseMargem * margemLucroPercentual;
+    // 10. CÁLCULO PREÇOS VAREJO E ATACADO (UNITÁRIOS E TOTAIS)
+    const lucroVarejoUnit = custoBaseMargemUnit * margemVarejoPercentual;
+    const precoVarejoUnit = custoBaseMargemUnit + lucroVarejoUnit + custoManutencaoUnit;
+    const totalVarejoLote = precoVarejoUnit * qtdPecas;
 
-    // 11. Preço de Venda Final
-    const precoVendaFinal = custoBaseMargem + lucroLiquido + custoManutencao;
+    const lucroAtacadoUnit = custoBaseMargemUnit * margemAtacadoPercentual;
+    const precoAtacadoUnit = custoBaseMargemUnit + lucroAtacadoUnit + custoManutencaoUnit;
+    const totalAtacadoLote = precoAtacadoUnit * qtdPecas;
 
-    // 12. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO
-    const boxInsumos = subtotalDireto + custoFalhas;
-    const boxPoupanca = custoManutencao;
-    const boxReinvestimento = lucroLiquido / 2;
-    const boxBolso = (lucroLiquido / 2) + custoMaoObra;
+    // DETERMINA SE APLICOU ATACADO OU VAREJO NO LOTE ATUAL
+    const isAtacadoAplicado = qtdPecas >= qtdMinAtacado;
+    const precoUnitAplicado = isAtacadoAplicado ? precoAtacadoUnit : precoVarejoUnit;
+    const precoTotalAplicado = isAtacadoAplicado ? totalAtacadoLote : totalVarejoLote;
+    const lucroLiquidoUnitAplicado = isAtacadoAplicado ? lucroAtacadoUnit : lucroVarejoUnit;
+    const lucroLiquidoTotalLote = lucroLiquidoUnitAplicado * qtdPecas;
 
-    // ATUALIZAÇÃO DA TELA DA CALCULADORA
-    resCustoFilamento.textContent = formatarMoeda(custoFilamento);
-    resCustoEnergia.textContent = formatarMoeda(custoEnergia);
-    resCustoManutencao.textContent = formatarMoeda(custoManutencao);
-    resSubtotalDireto.textContent = formatarMoeda(subtotalDireto);
-    resCustoFalhas.textContent = formatarMoeda(custoFalhas);
-    resCustoMaoObra.textContent = formatarMoeda(custoMaoObra);
-    resCustoTotal.textContent = formatarMoeda(custoTotalProducao);
-    resLucroLiquido.textContent = formatarMoeda(lucroLiquido);
-    resPrecoVenda.textContent = formatarMoeda(precoVendaFinal);
+    // Custos Totais do Lote
+    const custoFilamentoTotal = custoFilamentoUnit * qtdPecas;
+    const custoEnergiaTotal = custoEnergiaUnit * qtdPecas;
+    const custoManutencaoTotal = custoManutencaoUnit * qtdPecas;
+    const custoMaoObraTotal = custoMaoObraUnit * qtdPecas;
+    const custoTotalProducaoLote = custoTotalProducaoUnit * qtdPecas;
+    const subtotalInsumosTotal = (subtotalDiretoUnit + custoFalhasUnit) * qtdPecas;
 
-    // ATUALIZAÇÃO DOS VALORES DAS CAIXINHAS
+    // 11. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO (BASEADO NO VALOR TOTAL RECEBIDO)
+    const boxInsumos = subtotalInsumosTotal;
+    const boxPoupanca = custoManutencaoTotal;
+    const boxReinvestimento = lucroLiquidoTotalLote / 2;
+    const boxBolso = (lucroLiquidoTotalLote / 2) + custoMaoObraTotal;
+
+    // GUARDAR EM CACHE PARA O COPIADOR WHATSAPP
+    calcCache = {
+        qtdPecas,
+        qtdMinAtacado,
+        precoVarejoUnit,
+        totalVarejoLote,
+        precoAtacadoUnit,
+        totalAtacadoLote,
+        isAtacadoAplicado,
+        precoUnitAplicado,
+        precoTotalAplicado,
+        tempoTotalHorasUnit
+    };
+
+    // ATUALIZAÇÃO DA TELA DO RESULTADO
+    lblMinAtacado.textContent = qtdMinAtacado;
+    
+    resUnitVarejo.textContent = formatarMoeda(precoVarejoUnit);
+    resTotalVarejo.textContent = formatarMoeda(totalVarejoLote);
+    resSubVarejo.textContent = `Total (${qtdPecas} un)`;
+
+    resUnitAtacado.textContent = formatarMoeda(precoAtacadoUnit);
+    resTotalAtacado.textContent = formatarMoeda(totalAtacadoLote);
+    resSubAtacado.textContent = `Total (${qtdPecas} un)`;
+
+    // DESTAQUE DA MODALIDADE ATIVA
+    if (isAtacadoAplicado) {
+        cardPriceAtacado.classList.add('applied');
+        cardPriceVarejo.classList.remove('applied');
+        lblAppliedTier.textContent = 'ATACADO (Desconto de Lote Aplicado)';
+    } else {
+        cardPriceVarejo.classList.add('applied');
+        cardPriceAtacado.classList.remove('applied');
+        lblAppliedTier.textContent = 'VAREJO';
+    }
+
+    // TELA DE CUSTOS INTERNOS
+    resCustoFilamento.textContent = formatarMoeda(custoFilamentoTotal);
+    resCustoEnergia.textContent = formatarMoeda(custoEnergiaTotal);
+    resCustoManutencao.textContent = formatarMoeda(custoManutencaoTotal);
+    resCustoMaoObra.textContent = formatarMoeda(custoMaoObraTotal);
+    resCustoTotal.textContent = formatarMoeda(custoTotalProducaoLote);
+    resLucroLiquido.textContent = formatarMoeda(lucroLiquidoTotalLote);
+
+    // ATUALIZAÇÃO DAS CAIXINHAS
     if (resBoxInsumos) resBoxInsumos.textContent = formatarMoeda(boxInsumos);
     if (resBoxPoupanca) resBoxPoupanca.textContent = formatarMoeda(boxPoupanca);
     if (resBoxReinvestimento) resBoxReinvestimento.textContent = formatarMoeda(boxReinvestimento);
     if (resBoxBolso) resBoxBolso.textContent = formatarMoeda(boxBolso);
-
-    const margemExibicao = (parseFloat(inputMargemLucro.value) || 0);
-    resBadgeLucro.textContent = `Lucro Líquido: ${formatarMoeda(lucroLiquido)} (+${margemExibicao}%)`;
 }
 
-// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL
+// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL (COM TABELA DE ATACADO)
 function copiarResumoCliente() {
     const nomeProjeto = inputNomeProjeto.value.trim() || 'Impressão Peça 3D';
     const filamentoId = selectFilamentoCalc.value;
     const filamento = filamentos.find(f => f.id === filamentoId);
     
     const materialTexto = filamento ? `${filamento.tipo} (${filamento.corNome})` : 'Material Especial 3D';
-    const precoVenda = resPrecoVenda.textContent;
     const peso = inputPesoUsado.value;
-    const tempoH = inputTempoHoras.value;
-    const tempoM = inputTempoMinutos.value;
+
+    const {
+        qtdPecas,
+        qtdMinAtacado,
+        precoVarejoUnit,
+        precoAtacadoUnit,
+        isAtacadoAplicado,
+        precoTotalAplicado,
+        tempoTotalHorasUnit
+    } = calcCache;
+
+    const tempoTotalHoras = tempoTotalHorasUnit * qtdPecas;
+    const horasInt = Math.floor(tempoTotalHoras);
+    const minInt = Math.round((tempoTotalHoras - horasInt) * 60);
+
+    const statusDesconto = isAtacadoAplicado 
+        ? `🔥 *DESCONTO DE ATACADO APLICADO!* (${qtdPecas} unidades)`
+        : `🛍️ *PEDIDO VAREJO* (${qtdPecas} unidade${qtdPecas > 1 ? 's' : ''})`;
 
     const textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
 --------------------------------------------------
 📦 *Projeto:* ${nomeProjeto}
 🧵 *Material:* ${materialTexto}
-⚖️ *Especificação:* aprox. ${peso}g
+⚖️ *Peso Unitário:* aprox. ${peso}g
 
-💰 *VALOR FINAL:* ${precoVenda}
+🏷️ *TABELA DE PREÇOS:*
+🔹 *Varejo (1 a ${qtdMinAtacado - 1} un):* ${formatarMoeda(precoVarejoUnit)} / un
+🔥 *Atacado (A partir de ${qtdMinAtacado} un):* ${formatarMoeda(precoAtacadoUnit)} / un
+
 --------------------------------------------------
-📌 *Prazo de Produção:* ~${tempoH}h ${tempoM}min
+🛒 *SEU PEDIDO (${qtdPecas} un):*
+${statusDesconto}
+💰 *VALOR TOTAL:* ${formatarMoeda(precoTotalAplicado)}
+--------------------------------------------------
+📌 *Prazo Estimado de Produção:* ~${horasInt}h ${minInt}min
 📌 *Validade do Orçamento:* 7 dias
 
 🚀 *Rev Maker - Impressão 3D e Projetos*
 Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
 
     navigator.clipboard.writeText(textoCliente).then(() => {
-        alert('Orçamento para o CLIENTE copiado com sucesso! Pronto para colar no WhatsApp.');
+        alert('Orçamento comparativo Varejo/Atacado copiado com sucesso! Pronto para enviar no WhatsApp.');
     }).catch(err => {
         console.error('Erro ao copiar: ', err);
     });

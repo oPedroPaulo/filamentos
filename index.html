@@ -167,9 +167,11 @@
 
                         <form id="form-calculadora" onsubmit="return false;">
                             
-                            <div class="form-group">
-                                <label for="nome-projeto"><i class="fa-solid fa-cube"></i> Nome do Projeto / Peça (Opcional)</label>
-                                <input type="text" id="nome-projeto" placeholder="Ex: Suporte de Headset, Vasinho Geométrico">
+                            <div class="form-row">
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label for="nome-projeto"><i class="fa-solid fa-cube"></i> Nome do Projeto / Peça (Opcional)</label>
+                                    <input type="text" id="nome-projeto" placeholder="Ex: Suporte de Headset, Vasinho Geométrico">
+                                </div>
                             </div>
 
                             <!-- SELEÇÃO CUSTOMIZADA DE FILAMENTO COM CORES VISÍVEIS -->
@@ -183,7 +185,7 @@
                                         <i class="fa-solid fa-chevron-down"></i>
                                     </div>
                                     <div class="custom-options hidden" id="custom-options">
-                                        <!-- Opções com ícone de cor injetadas dinamicamente via JS -->
+                                        <!-- Opções injetadas via JS -->
                                     </div>
                                     <input type="hidden" id="select-filamento-calc" value="">
                                 </div>
@@ -191,18 +193,47 @@
 
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="peso-usado"><i class="fa-solid fa-scale-balanced"></i> Peso da Peça (g)</label>
+                                    <label for="peso-usado"><i class="fa-solid fa-scale-balanced"></i> Peso Unitário (g)</label>
                                     <input type="number" id="peso-usado" placeholder="Ex: 85" min="0.1" step="0.1" value="85" required>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="tempo-horas"><i class="fa-solid fa-clock"></i> Tempo de Impressão</label>
+                                    <label for="tempo-horas"><i class="fa-solid fa-clock"></i> Tempo de Impressão (Unitário)</label>
                                     <div class="time-inputs">
                                         <input type="number" id="tempo-horas" placeholder="Horas" min="0" value="4" required>
                                         <span>h</span>
                                         <input type="number" id="tempo-minutos" placeholder="Min" min="0" max="59" value="30" required>
                                         <span>min</span>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- QUANTIDADE & REGRAS DE ATACADO -->
+                            <div class="section-divider">
+                                <span>Quantidade & Margens (Varejo / Atacado)</span>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="qtd-pecas"><i class="fa-solid fa-cubes"></i> Qtd. de Peças</label>
+                                    <input type="number" id="qtd-pecas" value="1" min="1" step="1" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="qtd-min-atacado"><i class="fa-solid fa-layer-group"></i> Qtd. Mínima Atacado</label>
+                                    <input type="number" id="qtd-min-atacado" value="5" min="2" step="1" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group highlight-input">
+                                    <label for="margem-varejo"><i class="fa-solid fa-tag"></i> Margem Varejo (%)</label>
+                                    <input type="number" id="margem-varejo" value="200" min="0" step="5">
+                                </div>
+
+                                <div class="form-group highlight-input-atacado">
+                                    <label for="margem-atacado"><i class="fa-solid fa-tags"></i> Margem Atacado (%)</label>
+                                    <input type="number" id="margem-atacado" value="100" min="0" step="5">
                                 </div>
                             </div>
 
@@ -234,16 +265,9 @@
                                 </div>
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="custo-mao-obra"><i class="fa-solid fa-user-gear"></i> Mão de Obra / Pós-Proc (R$)</label>
-                                    <input type="number" id="custo-mao-obra" value="15.00" min="0" step="0.50">
-                                </div>
-
-                                <div class="form-group highlight-input">
-                                    <label for="margem-lucro"><i class="fa-solid fa-chart-line"></i> Margem de Lucro (%)</label>
-                                    <input type="number" id="margem-lucro" value="200" min="0" step="5">
-                                </div>
+                            <div class="form-group">
+                                <label for="custo-mao-obra"><i class="fa-solid fa-user-gear"></i> Mão de Obra por Peça (R$)</label>
+                                <input type="number" id="custo-mao-obra" value="15.00" min="0" step="0.50">
                             </div>
 
                         </form>
@@ -253,18 +277,33 @@
                     <div class="card result-card">
                         <div class="card-header">
                             <h2><i class="fa-solid fa-receipt icon-rev-blue"></i> Resultado do Orçamento</h2>
-                            <p>Preço final e cálculo interno de rentabilidade</p>
+                            <p>Valores de Varejo, Atacado e divisão financeira</p>
                         </div>
 
-                        <div class="price-hero">
-                            <span class="price-label">Preço Sugerido de Venda</span>
-                            <div class="price-value" id="res-preco-venda">R$ 0,00</div>
-                            <div class="price-badge" id="res-badge-lucro">Lucro Líquido: R$ 0,00 (+0%)</div>
+                        <!-- HERO PREÇOS COMPARATIVOS (VAREJO X ATACADO) -->
+                        <div class="price-hero-dual">
+                            <div class="price-box-card varejo" id="card-price-varejo">
+                                <span class="price-type-badge">VAREJO</span>
+                                <div class="price-unit-label">Unitário: <strong id="res-unit-varejo">R$ 0,00</strong></div>
+                                <div class="price-main-value" id="res-total-varejo">R$ 0,00</div>
+                                <div class="price-sub-info" id="res-sub-varejo">Total (1 un)</div>
+                            </div>
+
+                            <div class="price-box-card atacado" id="card-price-atacado">
+                                <span class="price-type-badge badge-atacado">ATACADO (≥ <span id="lbl-min-atacado">5</span> un)</span>
+                                <div class="price-unit-label">Unitário: <strong id="res-unit-atacado">R$ 0,00</strong></div>
+                                <div class="price-main-value" id="res-total-atacado">R$ 0,00</div>
+                                <div class="price-sub-info" id="res-sub-atacado">Total (1 un)</div>
+                            </div>
+                        </div>
+
+                        <div class="active-tier-status" id="res-tier-status">
+                            <i class="fa-solid fa-circle-check"></i> Calculando orçamento no modelo <strong id="lbl-applied-tier">VAREJO</strong>
                         </div>
 
                         <!-- PAINEL DAS CAIXINHAS DO MERCADO PAGO -->
                         <div class="caixinhas-container">
-                            <div class="breakdown-title"><i class="fa-solid fa-vault icon-rev-blue"></i> Divisão para Caixinhas (Mercado Pago)</div>
+                            <div class="breakdown-title"><i class="fa-solid fa-vault icon-rev-blue"></i> Divisão para Caixinhas (Pedido Total)</div>
                             <div class="caixinhas-grid">
                                 <div class="caixinha-card caixinha-insumos">
                                     <div class="caixinha-icon"><i class="fa-solid fa-boxes-packing"></i></div>
@@ -300,54 +339,44 @@
                             </div>
                         </div>
 
-                        <!-- Detalhamento Interno (Apenas para o Maker) -->
+                        <!-- Detalhamento Interno do Pedido -->
                         <div class="internal-breakdown">
-                            <div class="breakdown-title"><i class="fa-solid fa-lock"></i> Detalhamento de Custos Internos</div>
+                            <div class="breakdown-title"><i class="fa-solid fa-lock"></i> Custos Internos do Lote Total</div>
                             
                             <div class="breakdown-list">
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-spool color-icon1"></i> Filamento Gastos</span>
+                                    <span class="item-title"><i class="fa-solid fa-spool color-icon1"></i> Filamento Total</span>
                                     <span class="item-value" id="res-custo-filamento">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-bolt color-icon2"></i> Energia Elétrica</span>
+                                    <span class="item-title"><i class="fa-solid fa-bolt color-icon2"></i> Energia Elétrica Total</span>
                                     <span class="item-value" id="res-custo-energia">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-wrench color-icon3"></i> Depreciação Máquina</span>
+                                    <span class="item-title"><i class="fa-solid fa-wrench color-icon3"></i> Depreciação Máquina Total</span>
                                     <span class="item-value" id="res-custo-manutencao">R$ 0,00</span>
                                 </div>
 
-                                <div class="breakdown-item subtotal">
-                                    <span class="item-title">Subtotal de Custos Diretos</span>
-                                    <span class="item-value" id="res-subtotal-direto">R$ 0,00</span>
-                                </div>
-
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-shield-cat color-icon4"></i> Margem de Perda/Falhas</span>
-                                    <span class="item-value" id="res-custo-falhas">R$ 0,00</span>
-                                </div>
-
-                                <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-hand-holding-hand color-icon5"></i> Mão de Obra / Preparação</span>
+                                    <span class="item-title"><i class="fa-solid fa-hand-holding-hand color-icon5"></i> Mão de Obra Total</span>
                                     <span class="item-value" id="res-custo-mao-obra">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item total-cost">
-                                    <span class="item-title">CUSTO TOTAL DE PRODUÇÃO</span>
+                                    <span class="item-title">CUSTO TOTAL DO LOTE</span>
                                     <span class="item-value" id="res-custo-total">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item profit-row">
-                                    <span class="item-title"><i class="fa-solid fa-sack-dollar color-icon6"></i> Lucro Líquido Real</span>
+                                    <span class="item-title"><i class="fa-solid fa-sack-dollar color-icon6"></i> Lucro Líquido do Lote</span>
                                     <span class="item-value" id="res-lucro-liquido">R$ 0,00</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Apenas dados para o cliente final serão copiados -->
+                        <!-- Botão Copiar -->
                         <div class="summary-footer-actions">
                             <button class="btn btn-primary-rev" id="btn-copiar-resumo">
                                 <i class="fa-solid fa-paper-plane"></i> Copiar Orçamento do Cliente
