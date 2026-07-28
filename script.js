@@ -24,9 +24,14 @@ const containerFilamentos = document.getElementById('container-filamentos');
 const countFilamentos = document.getElementById('count-filamentos');
 const inputBuscaFilamento = document.getElementById('input-busca-filamento');
 
-// Calculadora
+// Calculadora & Custom Select
 const inputNomeProjeto = document.getElementById('nome-projeto');
-const selectFilamentoCalc = document.getElementById('select-filamento-calc');
+const selectFilamentoCalc = document.getElementById('select-filamento-calc'); // Hidden Input
+const customSelectWrapper = document.getElementById('custom-select-filamento');
+const selectTrigger = document.getElementById('select-trigger');
+const triggerContent = document.getElementById('trigger-content');
+const customOptions = document.getElementById('custom-options');
+
 const inputPesoUsado = document.getElementById('peso-usado');
 const inputTempoHoras = document.getElementById('tempo-horas');
 const inputTempoMinutos = document.getElementById('tempo-minutos');
@@ -50,6 +55,12 @@ const resCustoTotal = document.getElementById('res-custo-total');
 const resLucroLiquido = document.getElementById('res-lucro-liquido');
 const btnCopiarResumo = document.getElementById('btn-copiar-resumo');
 
+// Caixinhas Mercado Pago DOM
+const resBoxInsumos = document.getElementById('res-box-insumos');
+const resBoxPoupanca = document.getElementById('res-box-poupanca');
+const resBoxReinvestimento = document.getElementById('res-box-reinvestimento');
+const resBoxBolso = document.getElementById('res-box-bolso');
+
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     inputDataCompra.valueAsDate = new Date();
@@ -59,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initFormFilamentoEvents();
     initCalculadoraEvents();
     initBackupEvents();
+    initCustomSelectEvents();
 });
 
 // ALTERNÂNCIA DE ABAS
@@ -269,26 +281,87 @@ window.excluirFilamento = function(id) {
 window.usarNaCalculadora = function(id) {
     const calcTabBtn = document.querySelector('[data-tab="tab-calculadora"]');
     calcTabBtn.click();
-    selectFilamentoCalc.value = id;
-    calcularOrcamento3D();
+    selecionarFilamentoCustom(id);
 };
 
-function atualizarSelectCalculadora() {
-    selectFilamentoCalc.innerHTML = '<option value="">-- Selecione um filamento do estoque --</option>';
-
-    filamentos.forEach(f => {
-        const precoGrama = (f.precoPago / f.pesoTotal).toFixed(3);
-        const option = document.createElement('option');
-        option.value = f.id;
-        option.textContent = `${f.marca} - ${f.tipo} (${f.corNome}) - R$ ${precoGrama}/g`;
-        selectFilamentoCalc.appendChild(option);
+// CONTROLE DO DROPDOWN CUSTOMIZADO COM BOLINHAS DE COR
+function initCustomSelectEvents() {
+    selectTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        customSelectWrapper.classList.toggle('open');
+        customOptions.classList.toggle('hidden');
     });
+
+    document.addEventListener('click', () => {
+        customSelectWrapper.classList.remove('open');
+        customOptions.classList.add('hidden');
+    });
+}
+
+function atualizarSelectCalculadora() {
+    customOptions.innerHTML = '';
+
+    if (filamentos.length === 0) {
+        triggerContent.innerHTML = '<span>Nenhum filamento disponível no estoque</span>';
+        selectFilamentoCalc.value = '';
+        return;
+    }
+
+    filamentos.forEach((f) => {
+        const precoGrama = (f.precoPago / f.pesoTotal).toFixed(3);
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'custom-option';
+        optionDiv.setAttribute('data-id', f.id);
+
+        optionDiv.innerHTML = `
+            <span class="color-swatch-circle" style="background-color: ${f.corHex};"></span>
+            <span><strong>${f.corNome.toUpperCase()}</strong> | ${f.marca} - ${f.tipo} (R$ ${precoGrama}/g)</span>
+        `;
+
+        optionDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selecionarFilamentoCustom(f.id);
+            customSelectWrapper.classList.remove('open');
+            customOptions.classList.add('hidden');
+        });
+
+        customOptions.appendChild(optionDiv);
+    });
+
+    // Mantém a seleção atual se existir, ou seleciona o primeiro
+    const valorAtual = selectFilamentoCalc.value;
+    if (valorAtual && filamentos.some(f => f.id === valorAtual)) {
+        selecionarFilamentoCustom(valorAtual);
+    } else if (filamentos.length > 0) {
+        selecionarFilamentoCustom(filamentos[0].id);
+    }
+}
+
+function selecionarFilamentoCustom(id) {
+    const filamento = filamentos.find(f => f.id === id);
+    if (!filamento) return;
+
+    selectFilamentoCalc.value = filamento.id;
+
+    // Destaca a opção selecionada na lista
+    document.querySelectorAll('.custom-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.getAttribute('data-id') === id);
+    });
+
+    // Atualiza o Gatilho com a Bolinha da Cor + Texto
+    const precoGrama = (filamento.precoPago / filamento.pesoTotal).toFixed(3);
+    triggerContent.innerHTML = `
+        <span class="color-swatch-circle" style="background-color: ${filamento.corHex};"></span>
+        <span><strong>${filamento.corNome.toUpperCase()}</strong> | ${filamento.marca} - ${filamento.tipo} (R$ ${precoGrama}/g)</span>
+    `;
+
+    calcularOrcamento3D();
 }
 
 // MOTOR DA CALCULADORA DE PRECIFICAÇÃO
 function initCalculadoraEvents() {
     const inputs = [
-        inputNomeProjeto, selectFilamentoCalc, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
+        inputNomeProjeto, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
         inputPotencia, inputTarifaKwh, inputTaxaDepreciacao, inputTaxaFalha,
         inputCustoMaoObra, inputMargemLucro
     ];
@@ -306,7 +379,7 @@ function calcularOrcamento3D() {
     const filamentoId = selectFilamentoCalc.value;
     const filamento = filamentos.find(f => f.id === filamentoId);
 
-    // 1. Custo de Material (Filamento)
+    // 1. Custo de Material
     let custoFilamento = 0;
     if (filamento) {
         const custoGrama = filamento.precoPago / filamento.pesoTotal;
@@ -324,34 +397,40 @@ function calcularOrcamento3D() {
     const tarifaKwh = parseFloat(inputTarifaKwh.value) || 0;
     const custoEnergia = potenciaKW * tempoTotalHoras * tarifaKwh;
 
-    // 4. Depreciação / Manutenção (Isolada para adição direta no preço final)
+    // 4. Depreciação / Manutenção (Seco)
     const taxaDepreciacaoHora = parseFloat(inputTaxaDepreciacao.value) || 0;
     const custoManutencao = taxaDepreciacaoHora * tempoTotalHoras;
 
-    // 5. Subtotal de Insumos Diretos (Apenas Filamento + Energia)
+    // 5. Subtotal Direto de Insumos
     const subtotalDireto = custoFilamento + custoEnergia;
 
-    // 6. Taxa de Falhas aplicada apenas sobre os insumos consumidos
+    // 6. Taxa de Falhas
     const taxaFalhaPercentual = (parseFloat(inputTaxaFalha.value) || 0) / 100;
     const custoFalhas = subtotalDireto * taxaFalhaPercentual;
 
     // 7. Mão de Obra
     const custoMaoObra = parseFloat(inputCustoMaoObra.value) || 0;
 
-    // 8. Base de Custo para Margem de Lucro (Exclui a depreciação)
+    // 8. Base de Custo para Lucro
     const custoBaseMargem = subtotalDireto + custoFalhas + custoMaoObra;
 
-    // 9. Custo Total Real de Produção (Para seu controle interno)
+    // 9. Custo Total de Produção
     const custoTotalProducao = custoBaseMargem + custoManutencao;
 
-    // 10. Lucro Líquido (Calculado APENAS sobre a base, sem multiplicar a depreciação)
+    // 10. Lucro Líquido
     const margemLucroPercentual = (parseFloat(inputMargemLucro.value) || 0) / 100;
     const lucroLiquido = custoBaseMargem * margemLucroPercentual;
 
-    // 11. Preço de Venda Final = Base de Custo + Lucro + Depreciação seca (1:1)
+    // 11. Preço de Venda Final
     const precoVendaFinal = custoBaseMargem + lucroLiquido + custoManutencao;
 
-    // ATUALIZAÇÃO DA TELA
+    // 12. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO
+    const boxInsumos = subtotalDireto + custoFalhas;
+    const boxPoupanca = custoManutencao;
+    const boxReinvestimento = lucroLiquido / 2;
+    const boxBolso = (lucroLiquido / 2) + custoMaoObra;
+
+    // ATUALIZAÇÃO DA TELA DA CALCULADORA
     resCustoFilamento.textContent = formatarMoeda(custoFilamento);
     resCustoEnergia.textContent = formatarMoeda(custoEnergia);
     resCustoManutencao.textContent = formatarMoeda(custoManutencao);
@@ -362,11 +441,17 @@ function calcularOrcamento3D() {
     resLucroLiquido.textContent = formatarMoeda(lucroLiquido);
     resPrecoVenda.textContent = formatarMoeda(precoVendaFinal);
 
+    // ATUALIZAÇÃO DOS VALORES DAS CAIXINHAS
+    if (resBoxInsumos) resBoxInsumos.textContent = formatarMoeda(boxInsumos);
+    if (resBoxPoupanca) resBoxPoupanca.textContent = formatarMoeda(boxPoupanca);
+    if (resBoxReinvestimento) resBoxReinvestimento.textContent = formatarMoeda(boxReinvestimento);
+    if (resBoxBolso) resBoxBolso.textContent = formatarMoeda(boxBolso);
+
     const margemExibicao = (parseFloat(inputMargemLucro.value) || 0);
     resBadgeLucro.textContent = `Lucro Líquido: ${formatarMoeda(lucroLiquido)} (+${margemExibicao}%)`;
 }
 
-// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL (SEM CUSTOS INTERNOS/MARGENS)
+// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL
 function copiarResumoCliente() {
     const nomeProjeto = inputNomeProjeto.value.trim() || 'Impressão Peça 3D';
     const filamentoId = selectFilamentoCalc.value;
@@ -381,6 +466,9 @@ function copiarResumoCliente() {
     const textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
 --------------------------------------------------
 📦 *Projeto:* ${nomeProjeto}
+🧵 *Material:* ${materialTexto}
+⚖️ *Especificação:* aprox. ${peso}g
+
 💰 *VALOR FINAL:* ${precoVenda}
 --------------------------------------------------
 📌 *Prazo de Produção:* ~${tempoH}h ${tempoM}min

@@ -172,11 +172,21 @@
                                 <input type="text" id="nome-projeto" placeholder="Ex: Suporte de Headset, Vasinho Geométrico">
                             </div>
 
+                            <!-- SELEÇÃO CUSTOMIZADA DE FILAMENTO COM CORES VISÍVEIS -->
                             <div class="form-group">
-                                <label for="select-filamento-calc"><i class="fa-solid fa-spool"></i> Filamento Utilizado</label>
-                                <select id="select-filamento-calc" required>
-                                    <option value="">-- Selecione um filamento do estoque --</option>
-                                </select>
+                                <label><i class="fa-solid fa-spool"></i> Filamento Utilizado</label>
+                                <div class="custom-select-wrapper" id="custom-select-filamento">
+                                    <div class="custom-select-trigger" id="select-trigger">
+                                        <div class="trigger-content" id="trigger-content">
+                                            <span>-- Selecione um filamento do estoque --</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </div>
+                                    <div class="custom-options hidden" id="custom-options">
+                                        <!-- Opções com ícone de cor injetadas dinamicamente via JS -->
+                                    </div>
+                                    <input type="hidden" id="select-filamento-calc" value="">
+                                </div>
                             </div>
 
                             <div class="form-row">
@@ -250,6 +260,44 @@
                             <span class="price-label">Preço Sugerido de Venda</span>
                             <div class="price-value" id="res-preco-venda">R$ 0,00</div>
                             <div class="price-badge" id="res-badge-lucro">Lucro Líquido: R$ 0,00 (+0%)</div>
+                        </div>
+
+                        <!-- PAINEL DAS CAIXINHAS DO MERCADO PAGO -->
+                        <div class="caixinhas-container">
+                            <div class="breakdown-title"><i class="fa-solid fa-vault icon-rev-blue"></i> Divisão para Caixinhas (Mercado Pago)</div>
+                            <div class="caixinhas-grid">
+                                <div class="caixinha-card caixinha-insumos">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-boxes-packing"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">1. Reposição Insumos</span>
+                                        <span class="caixinha-value" id="res-box-insumos">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-poupanca">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">2. Poupança Impressora</span>
+                                        <span class="caixinha-value" id="res-box-poupanca">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-reinvestimento">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-rocket"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">3. Reinvestimento Rev</span>
+                                        <span class="caixinha-value" id="res-box-reinvestimento">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-bolso">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-wallet"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">4. Meu Bolso (Pró-Labore)</span>
+                                        <span class="caixinha-value" id="res-box-bolso">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Detalhamento Interno (Apenas para o Maker) -->

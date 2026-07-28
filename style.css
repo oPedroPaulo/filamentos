@@ -72,7 +72,6 @@ body {
     overflow: hidden;
 }
 
-/* Top Glow Bar com cores da logo */
 .app-header::before {
     content: '';
     position: absolute;
@@ -108,7 +107,6 @@ body {
     letter-spacing: -1px;
 }
 
-/* Letras Coloridas da Logo */
 .letter-r { color: var(--rev-blue); text-shadow: 0 0 12px rgba(0, 34, 255, 0.4); }
 .letter-e { color: var(--rev-purple); text-shadow: 0 0 12px rgba(122, 0, 136, 0.4); }
 .letter-v { color: var(--rev-red); text-shadow: 0 0 12px rgba(255, 48, 0, 0.4); }
@@ -167,7 +165,6 @@ body {
     box-shadow: 0 4px 15px rgba(0, 34, 255, 0.3);
 }
 
-/* TAB CONTENT SWITCHING */
 .tab-content {
     display: none;
 }
@@ -286,7 +283,6 @@ input:focus, select:focus {
     padding: 4px 10px;
 }
 
-/* FORMATO CORRETO DE APPEARANCE */
 input[type="color"] {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -303,6 +299,85 @@ input[type="color"] {
     font-size: 0.85rem;
     font-family: monospace;
     color: var(--text-secondary);
+}
+
+/* CUSTOM DROPDOWN COM CORES */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+    user-select: none;
+}
+
+.custom-select-trigger {
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.custom-select-trigger:hover,
+.custom-select-wrapper.open .custom-select-trigger {
+    border-color: var(--rev-blue);
+    box-shadow: 0 0 0 3px rgba(0, 34, 255, 0.25);
+}
+
+.trigger-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.custom-options {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.custom-option {
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.custom-option:hover {
+    background: rgba(0, 34, 255, 0.2);
+    color: #fff;
+}
+
+.custom-option.selected {
+    background: rgba(0, 34, 255, 0.35);
+    font-weight: 700;
+}
+
+.color-swatch-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
 }
 
 .time-inputs {
@@ -415,7 +490,7 @@ input[type="color"] {
     display: inline-block;
 }
 
-/* CARDS DE FILAMENTO NO ESTOQUE */
+/* ESTOQUE */
 .search-bar { position: relative; }
 .search-bar i {
     position: absolute; left: 12px; top: 50%;
@@ -494,7 +569,7 @@ input[type="color"] {
 }
 .btn-select-calc:hover { background: var(--rev-blue); color: white; }
 
-/* CARD DE RESULTADOS E DEMONSTRATIVO */
+/* RESULTADOS DA CALCULADORA */
 .price-hero {
     background: linear-gradient(135deg, rgba(0, 34, 255, 0.15), rgba(255, 48, 0, 0.15));
     border: 1px solid rgba(0, 34, 255, 0.3);
@@ -528,6 +603,68 @@ input[type="color"] {
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 700;
+}
+
+/* CAIXINHAS DO MERCADO PAGO (PAINEL VISUAL) */
+.caixinhas-container {
+    background: rgba(0, 34, 255, 0.05);
+    border: 1px solid rgba(0, 34, 255, 0.2);
+    border-radius: var(--radius-md);
+    padding: 14px;
+}
+
+.caixinhas-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.caixinha-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: var(--transition);
+}
+
+.caixinha-card:hover {
+    border-color: var(--rev-blue);
+}
+
+.caixinha-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.caixinha-insumos .caixinha-icon { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.caixinha-poupanca .caixinha-icon { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+.caixinha-reinvestimento .caixinha-icon { background: rgba(255, 48, 0, 0.2); color: #ff6b4a; }
+.caixinha-bolso .caixinha-icon { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+.caixinha-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.caixinha-label {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.caixinha-value {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
 }
 
 /* INTERNALS SECTION */
@@ -587,4 +724,8 @@ input[type="color"] {
 /* RESPONSIVO */
 @media (max-width: 992px) {
     .grid-two-columns, .grid-calc-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .caixinhas-grid { grid-template-columns: 1fr; }
 }
