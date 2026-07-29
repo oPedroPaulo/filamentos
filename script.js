@@ -25,6 +25,7 @@ const countFilamentos = document.getElementById('count-filamentos');
 const inputBuscaFilamento = document.getElementById('input-busca-filamento');
 
 // Calculadora & Custom Select
+const radiosTipoVenda = document.querySelectorAll('input[name="tipo-venda"]');
 const inputNomeProjeto = document.getElementById('nome-projeto');
 const selectFilamentoCalc = document.getElementById('select-filamento-calc');
 const customSelectWrapper = document.getElementById('custom-select-filamento');
@@ -36,9 +37,8 @@ const inputPesoUsado = document.getElementById('peso-usado');
 const inputTempoHoras = document.getElementById('tempo-horas');
 const inputTempoMinutos = document.getElementById('tempo-minutos');
 const inputQtdPecas = document.getElementById('qtd-pecas');
-const inputQtdMinAtacado = document.getElementById('qtd-min-atacado');
-const inputMargemVarejo = document.getElementById('margem-varejo');
-const inputMargemAtacado = document.getElementById('margem-atacado');
+const inputMargemLucro = document.getElementById('margem-lucro');
+const labelMargem = document.getElementById('label-margem');
 
 const inputPotencia = document.getElementById('potencia-watts');
 const inputTarifaKwh = document.getElementById('tarifa-kwh');
@@ -46,19 +46,11 @@ const inputTaxaDepreciacao = document.getElementById('taxa-depreciacao');
 const inputTaxaFalha = document.getElementById('taxa-falha');
 const inputCustoMaoObra = document.getElementById('custo-mao-obra');
 
-// Resultados Varejo x Atacado DOM
-const resUnitVarejo = document.getElementById('res-unit-varejo');
-const resTotalVarejo = document.getElementById('res-total-varejo');
-const resSubVarejo = document.getElementById('res-sub-varejo');
-
-const resUnitAtacado = document.getElementById('res-unit-atacado');
-const resTotalAtacado = document.getElementById('res-total-atacado');
-const resSubAtacado = document.getElementById('res-sub-atacado');
-
-const lblMinAtacado = document.getElementById('lbl-min-atacado');
-const lblAppliedTier = document.getElementById('lbl-applied-tier');
-const cardPriceVarejo = document.getElementById('card-price-varejo');
-const cardPriceAtacado = document.getElementById('card-price-atacado');
+// Resultados DOM
+const priceHeroCard = document.getElementById('price-hero-card');
+const resHeroLabel = document.getElementById('res-hero-label');
+const resPrecoVenda = document.getElementById('res-preco-venda');
+const resBadgeLucro = document.getElementById('res-badge-lucro');
 
 const resCustoFilamento = document.getElementById('res-custo-filamento');
 const resCustoEnergia = document.getElementById('res-custo-energia');
@@ -74,7 +66,7 @@ const resBoxPoupanca = document.getElementById('res-box-poupanca');
 const resBoxReinvestimento = document.getElementById('res-box-reinvestimento');
 const resBoxBolso = document.getElementById('res-box-bolso');
 
-// Guardar os valores calculados para a função de cópia
+// Cache dos dados calculados
 let calcCache = {};
 
 // INICIALIZAÇÃO
@@ -371,13 +363,12 @@ function selecionarFilamentoCustom(id) {
     calcularOrcamento3D();
 }
 
-// MOTOR DA CALCULADORA DE PRECIFICAÇÃO (VAREJO X ATACADO)
+// MOTOR DA CALCULADORA DE PRECIFICAÇÃO DEDICADO A VAREJO x ATACADO
 function initCalculadoraEvents() {
     const inputs = [
         inputNomeProjeto, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
-        inputQtdPecas, inputQtdMinAtacado, inputMargemVarejo, inputMargemAtacado,
-        inputPotencia, inputTarifaKwh, inputTaxaDepreciacao, inputTaxaFalha,
-        inputCustoMaoObra
+        inputQtdPecas, inputMargemLucro, inputPotencia, inputTarifaKwh,
+        inputTaxaDepreciacao, inputTaxaFalha, inputCustoMaoObra
     ];
 
     inputs.forEach(input => {
@@ -385,19 +376,39 @@ function initCalculadoraEvents() {
         input.addEventListener('change', calcularOrcamento3D);
     });
 
+    radiosTipoVenda.forEach(radio => {
+        radio.addEventListener('change', () => {
+            // Sugestão padrão de margem dependendo do modo selecionado
+            const modo = document.querySelector('input[name="tipo-venda"]:checked').value;
+            if (modo === 'varejo' && inputMargemLucro.value == '100') {
+                inputMargemLucro.value = '200';
+            } else if (modo === 'atacado' && inputMargemLucro.value == '200') {
+                inputMargemLucro.value = '100';
+            }
+            calcularOrcamento3D();
+        });
+    });
+
     btnCopiarResumo.addEventListener('click', copiarResumoCliente);
     calcularOrcamento3D();
 }
 
 function calcularOrcamento3D() {
+    const modoVenda = document.querySelector('input[name="tipo-venda"]:checked').value; // 'varejo' ou 'atacado'
+    const isAtacado = modoVenda === 'atacado';
+
     const filamentoId = selectFilamentoCalc.value;
     const filamento = filamentos.find(f => f.id === filamentoId);
 
-    // Quantidades e Margens
     const qtdPecas = Math.max(1, parseInt(inputQtdPecas.value) || 1);
-    const qtdMinAtacado = Math.max(2, parseInt(inputQtdMinAtacado.value) || 5);
-    const margemVarejoPercentual = (parseFloat(inputMargemVarejo.value) || 0) / 100;
-    const margemAtacadoPercentual = (parseFloat(inputMargemAtacado.value) || 0) / 100;
+    const margemPercentual = (parseFloat(inputMargemLucro.value) || 0) / 100;
+
+    // Atualiza label da margem
+    if (labelMargem) {
+        labelMargem.innerHTML = isAtacado 
+            ? `<i class="fa-solid fa-tags icon-rev-red"></i> Margem Atacado (%)`
+            : `<i class="fa-solid fa-tag icon-rev-blue"></i> Margem Varejo (%)`;
+    }
 
     // 1. Custo de Material Unitário
     let custoFilamentoUnit = 0;
@@ -437,21 +448,10 @@ function calcularOrcamento3D() {
     // 9. Custo Total de Produção Unitário
     const custoTotalProducaoUnit = custoBaseMargemUnit + custoManutencaoUnit;
 
-    // 10. CÁLCULO PREÇOS VAREJO E ATACADO (UNITÁRIOS E TOTAIS)
-    const lucroVarejoUnit = custoBaseMargemUnit * margemVarejoPercentual;
-    const precoVarejoUnit = custoBaseMargemUnit + lucroVarejoUnit + custoManutencaoUnit;
-    const totalVarejoLote = precoVarejoUnit * qtdPecas;
-
-    const lucroAtacadoUnit = custoBaseMargemUnit * margemAtacadoPercentual;
-    const precoAtacadoUnit = custoBaseMargemUnit + lucroAtacadoUnit + custoManutencaoUnit;
-    const totalAtacadoLote = precoAtacadoUnit * qtdPecas;
-
-    // DETERMINA SE APLICOU ATACADO OU VAREJO NO LOTE ATUAL
-    const isAtacadoAplicado = qtdPecas >= qtdMinAtacado;
-    const precoUnitAplicado = isAtacadoAplicado ? precoAtacadoUnit : precoVarejoUnit;
-    const precoTotalAplicado = isAtacadoAplicado ? totalAtacadoLote : totalVarejoLote;
-    const lucroLiquidoUnitAplicado = isAtacadoAplicado ? lucroAtacadoUnit : lucroVarejoUnit;
-    const lucroLiquidoTotalLote = lucroLiquidoUnitAplicado * qtdPecas;
+    // 10. PREÇO UNITÁRIO E TOTAL BASEADO NO MODO SELECIONADO
+    const lucroLiquidoUnit = custoBaseMargemUnit * margemPercentual;
+    const precoVendaUnit = custoBaseMargemUnit + lucroLiquidoUnit + custoManutencaoUnit;
+    const precoVendaTotal = precoVendaUnit * qtdPecas;
 
     // Custos Totais do Lote
     const custoFilamentoTotal = custoFilamentoUnit * qtdPecas;
@@ -460,48 +460,37 @@ function calcularOrcamento3D() {
     const custoMaoObraTotal = custoMaoObraUnit * qtdPecas;
     const custoTotalProducaoLote = custoTotalProducaoUnit * qtdPecas;
     const subtotalInsumosTotal = (subtotalDiretoUnit + custoFalhasUnit) * qtdPecas;
+    const lucroLiquidoTotalLote = lucroLiquidoUnit * qtdPecas;
 
-    // 11. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO (BASEADO NO VALOR TOTAL RECEBIDO)
+    // 11. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO RECALCULADAS COM BASE NA VENDA SELECIONADA
     const boxInsumos = subtotalInsumosTotal;
     const boxPoupanca = custoManutencaoTotal;
     const boxReinvestimento = lucroLiquidoTotalLote / 2;
     const boxBolso = (lucroLiquidoTotalLote / 2) + custoMaoObraTotal;
 
-    // GUARDAR EM CACHE PARA O COPIADOR WHATSAPP
+    // CACHE DE CÁLCULO
     calcCache = {
+        modoVenda,
         qtdPecas,
-        qtdMinAtacado,
-        precoVarejoUnit,
-        totalVarejoLote,
-        precoAtacadoUnit,
-        totalAtacadoLote,
-        isAtacadoAplicado,
-        precoUnitAplicado,
-        precoTotalAplicado,
+        precoVendaUnit,
+        precoVendaTotal,
+        lucroLiquidoTotalLote,
         tempoTotalHorasUnit
     };
 
     // ATUALIZAÇÃO DA TELA DO RESULTADO
-    lblMinAtacado.textContent = qtdMinAtacado;
-    
-    resUnitVarejo.textContent = formatarMoeda(precoVarejoUnit);
-    resTotalVarejo.textContent = formatarMoeda(totalVarejoLote);
-    resSubVarejo.textContent = `Total (${qtdPecas} un)`;
-
-    resUnitAtacado.textContent = formatarMoeda(precoAtacadoUnit);
-    resTotalAtacado.textContent = formatarMoeda(totalAtacadoLote);
-    resSubAtacado.textContent = `Total (${qtdPecas} un)`;
-
-    // DESTAQUE DA MODALIDADE ATIVA
-    if (isAtacadoAplicado) {
-        cardPriceAtacado.classList.add('applied');
-        cardPriceVarejo.classList.remove('applied');
-        lblAppliedTier.textContent = 'ATACADO (Desconto de Lote Aplicado)';
-    } else {
-        cardPriceVarejo.classList.add('applied');
-        cardPriceAtacado.classList.remove('applied');
-        lblAppliedTier.textContent = 'VAREJO';
+    if (resHeroLabel) {
+        resHeroLabel.textContent = isAtacado 
+            ? `Preço Sugerido (Lote Atacado - ${qtdPecas} un)`
+            : `Preço Sugerido (Varejo - ${qtdPecas} un)`;
     }
+
+    if (priceHeroCard) {
+        priceHeroCard.classList.toggle('atacado-active', isAtacado);
+    }
+
+    resPrecoVenda.textContent = formatarMoeda(precoVendaTotal);
+    resBadgeLucro.textContent = `Lucro Líquido: ${formatarMoeda(lucroLiquidoTotalLote)} (+${parseFloat(inputMargemLucro.value) || 0}%)`;
 
     // TELA DE CUSTOS INTERNOS
     resCustoFilamento.textContent = formatarMoeda(custoFilamentoTotal);
@@ -511,14 +500,14 @@ function calcularOrcamento3D() {
     resCustoTotal.textContent = formatarMoeda(custoTotalProducaoLote);
     resLucroLiquido.textContent = formatarMoeda(lucroLiquidoTotalLote);
 
-    // ATUALIZAÇÃO DAS CAIXINHAS
+    // ATUALIZAÇÃO RECALCULADA DAS CAIXINHAS
     if (resBoxInsumos) resBoxInsumos.textContent = formatarMoeda(boxInsumos);
     if (resBoxPoupanca) resBoxPoupanca.textContent = formatarMoeda(boxPoupanca);
     if (resBoxReinvestimento) resBoxReinvestimento.textContent = formatarMoeda(boxReinvestimento);
     if (resBoxBolso) resBoxBolso.textContent = formatarMoeda(boxBolso);
 }
 
-// COPIAR ORÇAMENTO EXCLUSIVO PARA O CONSUMIDOR FINAL (COM TABELA DE ATACADO)
+// COPIAR ORÇAMENTO PARA O CLIENTE
 function copiarResumoCliente() {
     const nomeProjeto = inputNomeProjeto.value.trim() || 'Impressão Peça 3D';
     const filamentoId = selectFilamentoCalc.value;
@@ -528,12 +517,10 @@ function copiarResumoCliente() {
     const peso = inputPesoUsado.value;
 
     const {
+        modoVenda,
         qtdPecas,
-        qtdMinAtacado,
-        precoVarejoUnit,
-        precoAtacadoUnit,
-        isAtacadoAplicado,
-        precoTotalAplicado,
+        precoVendaUnit,
+        precoVendaTotal,
         tempoTotalHorasUnit
     } = calcCache;
 
@@ -541,33 +528,44 @@ function copiarResumoCliente() {
     const horasInt = Math.floor(tempoTotalHoras);
     const minInt = Math.round((tempoTotalHoras - horasInt) * 60);
 
-    const statusDesconto = isAtacadoAplicado 
-        ? `🔥 *DESCONTO DE ATACADO APLICADO!* (${qtdPecas} unidades)`
-        : `🛍️ *PEDIDO VAREJO* (${qtdPecas} unidade${qtdPecas > 1 ? 's' : ''})`;
+    let textoCliente = '';
 
-    const textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
+    if (modoVenda === 'varejo') {
+        // VAREJO LIMPO: Sem menção à palavra varejo nem tabelas
+        const detalheQtd = qtdPecas > 1 ? ` (${qtdPecas} unidades)` : '';
+        textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
 --------------------------------------------------
 📦 *Projeto:* ${nomeProjeto}
 🧵 *Material:* ${materialTexto}
-⚖️ *Peso Unitário:* aprox. ${peso}g
+⚖️ *Especificação:* aprox. ${peso}g por peça${detalheQtd}
 
-🏷️ *TABELA DE PREÇOS:*
-🔹 *Varejo (1 a ${qtdMinAtacado - 1} un):* ${formatarMoeda(precoVarejoUnit)} / un
-🔥 *Atacado (A partir de ${qtdMinAtacado} un):* ${formatarMoeda(precoAtacadoUnit)} / un
-
+💰 *VALOR FINAL:* ${formatarMoeda(precoVendaTotal)}
 --------------------------------------------------
-🛒 *SEU PEDIDO (${qtdPecas} un):*
-${statusDesconto}
-💰 *VALOR TOTAL:* ${formatarMoeda(precoTotalAplicado)}
---------------------------------------------------
-📌 *Prazo Estimado de Produção:* ~${horasInt}h ${minInt}min
+📌 *Prazo de Produção:* ~${horasInt}h ${minInt}min
 📌 *Validade do Orçamento:* 7 dias
 
 🚀 *Rev Maker - Impressão 3D e Projetos*
 Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
+    } else {
+        // ATACADO: Bonitinho, com destaque para a quantidade de peças e lote em atacado
+        textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
+--------------------------------------------------
+📦 *Projeto:* ${nomeProjeto}
+🧵 *Material:* ${materialTexto}
+📦 *Quantidade:* ${qtdPecas} peças (Lote em Atacado)
+
+🏷️ *VALOR UNITÁRIO (ATACADO):* ${formatarMoeda(precoVendaUnit)} / un
+💰 *VALOR TOTAL DO LOTE:* ${formatarMoeda(precoVendaTotal)}
+--------------------------------------------------
+📌 *Prazo de Produção:* ~${horasInt}h ${minInt}min
+📌 *Validade do Orçamento:* 7 dias
+
+🚀 *Rev Maker - Impressão 3D e Projetos*
+Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
+    }
 
     navigator.clipboard.writeText(textoCliente).then(() => {
-        alert('Orçamento comparativo Varejo/Atacado copiado com sucesso! Pronto para enviar no WhatsApp.');
+        alert(`Orçamento de ${modoVenda.toUpperCase()} copiado com sucesso! Pronto para enviar no WhatsApp.`);
     }).catch(err => {
         console.error('Erro ao copiar: ', err);
     });
