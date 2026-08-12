@@ -1,11 +1,12 @@
 // ESTADO E LOCALSTORAGE REV MAKER
 let filamentos = [];
+let vendas = [];
 
 // REFS DO DOM
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabContents = document.querySelectorAll('.tab-content');
 
-// Form Cadastro
+// Form Cadastro Filamentos
 const formFilamento = document.getElementById('form-filamento');
 const inputId = document.getElementById('filamento-id');
 const inputMarca = document.getElementById('marca');
@@ -19,7 +20,7 @@ const inputPrecoPago = document.getElementById('preco-pago');
 const btnSalvarFilamento = document.getElementById('btn-salvar-filamento');
 const btnCancelarEdicao = document.getElementById('btn-cancelar-edicao');
 
-// Lista e Busca
+// Lista e Busca Filamentos
 const containerFilamentos = document.getElementById('container-filamentos');
 const countFilamentos = document.getElementById('count-filamentos');
 const inputBuscaFilamento = document.getElementById('input-busca-filamento');
@@ -46,11 +47,16 @@ const inputTaxaDepreciacao = document.getElementById('taxa-depreciacao');
 const inputTaxaFalha = document.getElementById('taxa-falha');
 const inputCustoMaoObra = document.getElementById('custo-mao-obra');
 
-// Resultados DOM
+// Resultados DOM Calculadora
 const priceHeroCard = document.getElementById('price-hero-card');
 const resHeroLabel = document.getElementById('res-hero-label');
 const resPrecoVenda = document.getElementById('res-preco-venda');
 const resBadgeLucro = document.getElementById('res-badge-lucro');
+
+const boxUnitMetrics = document.getElementById('box-unit-metrics');
+const unitValVenda = document.getElementById('unit-val-venda');
+const unitValCusto = document.getElementById('unit-val-custo');
+const unitValLucro = document.getElementById('unit-val-lucro');
 
 const resCustoFilamento = document.getElementById('res-custo-filamento');
 const resCustoEnergia = document.getElementById('res-custo-energia');
@@ -59,6 +65,7 @@ const resCustoMaoObra = document.getElementById('res-custo-mao-obra');
 const resCustoTotal = document.getElementById('res-custo-total');
 const resLucroLiquido = document.getElementById('res-lucro-liquido');
 const btnCopiarResumo = document.getElementById('btn-copiar-resumo');
+const btnLancarVenda = document.getElementById('btn-lancar-venda');
 
 // Caixinhas Mercado Pago DOM
 const resBoxInsumos = document.getElementById('res-box-insumos');
@@ -66,17 +73,38 @@ const resBoxPoupanca = document.getElementById('res-box-poupanca');
 const resBoxReinvestimento = document.getElementById('res-box-reinvestimento');
 const resBoxBolso = document.getElementById('res-box-bolso');
 
+// Elementos da Aba Vendas
+const formVendaManual = document.getElementById('form-venda-manual');
+const inputVendaCliente = document.getElementById('venda-cliente');
+const inputVendaValorTotal = document.getElementById('venda-valor-total');
+const inputVendaCustoInsumos = document.getElementById('venda-custo-insumos');
+const inputVendaData = document.getElementById('venda-data');
+
+const dashTotInsumos = document.getElementById('dash-tot-insumos');
+const dashTotPoupanca = document.getElementById('dash-tot-poupanca');
+const dashTotReinvestimento = document.getElementById('dash-tot-reinvestimento');
+const dashTotBolso = document.getElementById('dash-tot-bolso');
+const dashFaturamentoTotal = document.getElementById('dash-faturamento-total');
+
+const containerVendas = document.getElementById('container-vendas');
+const countVendas = document.getElementById('count-vendas');
+
 // Cache dos dados calculados
 let calcCache = {};
 
 // INICIALIZAÇÃO
 document.addEventListener('DOMContentLoaded', () => {
     inputDataCompra.valueAsDate = new Date();
+    if (inputVendaData) inputVendaData.valueAsDate = new Date();
+
     carregarFilamentos();
+    carregarVendas();
+
     initTabEvents();
     initColorPickerEvent();
     initFormFilamentoEvents();
     initCalculadoraEvents();
+    initVendasEvents();
     initBackupEvents();
     initCustomSelectEvents();
 });
@@ -101,7 +129,7 @@ function initColorPickerEvent() {
     });
 }
 
-// LOCALSTORAGE & CARREGAMENTO DE DADOS
+// LOCALSTORAGE & CARREGAMENTO DE FILAMENTOS E VENDAS
 function carregarFilamentos() {
     const data = localStorage.getItem('revmaker_filamentos');
     if (data) {
@@ -135,8 +163,22 @@ function carregarFilamentos() {
     atualizarSelectCalculadora();
 }
 
+function carregarVendas() {
+    const data = localStorage.getItem('revmaker_vendas');
+    if (data) {
+        vendas = JSON.parse(data);
+    } else {
+        vendas = [];
+    }
+    renderizarVendas();
+}
+
 function salvarNoLocalStorage() {
     localStorage.setItem('revmaker_filamentos', JSON.stringify(filamentos));
+}
+
+function salvarVendasNoLocalStorage() {
+    localStorage.setItem('revmaker_vendas', JSON.stringify(vendas));
 }
 
 // FORMULÁRIO DE FILAMENTOS
@@ -363,7 +405,7 @@ function selecionarFilamentoCustom(id) {
     calcularOrcamento3D();
 }
 
-// MOTOR DA CALCULADORA DE PRECIFICAÇÃO DEDICADO A VAREJO x ATACADO
+// MOTOR DA CALCULADORA DE PRECIFICAÇÃO
 function initCalculadoraEvents() {
     const inputs = [
         inputNomeProjeto, inputPesoUsado, inputTempoHoras, inputTempoMinutos,
@@ -378,7 +420,6 @@ function initCalculadoraEvents() {
 
     radiosTipoVenda.forEach(radio => {
         radio.addEventListener('change', () => {
-            // Sugestão padrão de margem dependendo do modo selecionado
             const modo = document.querySelector('input[name="tipo-venda"]:checked').value;
             if (modo === 'varejo' && inputMargemLucro.value == '100') {
                 inputMargemLucro.value = '200';
@@ -390,11 +431,12 @@ function initCalculadoraEvents() {
     });
 
     btnCopiarResumo.addEventListener('click', copiarResumoCliente);
+    btnLancarVenda.addEventListener('click', lancarCalculoNasVendas);
     calcularOrcamento3D();
 }
 
 function calcularOrcamento3D() {
-    const modoVenda = document.querySelector('input[name="tipo-venda"]:checked').value; // 'varejo' ou 'atacado'
+    const modoVenda = document.querySelector('input[name="tipo-venda"]:checked').value;
     const isAtacado = modoVenda === 'atacado';
 
     const filamentoId = selectFilamentoCalc.value;
@@ -403,7 +445,6 @@ function calcularOrcamento3D() {
     const qtdPecas = Math.max(1, parseInt(inputQtdPecas.value) || 1);
     const margemPercentual = (parseFloat(inputMargemLucro.value) || 0) / 100;
 
-    // Atualiza label da margem
     if (labelMargem) {
         labelMargem.innerHTML = isAtacado 
             ? `<i class="fa-solid fa-tags icon-rev-red"></i> Margem Atacado (%)`
@@ -448,7 +489,7 @@ function calcularOrcamento3D() {
     // 9. Custo Total de Produção Unitário
     const custoTotalProducaoUnit = custoBaseMargemUnit + custoManutencaoUnit;
 
-    // 10. PREÇO UNITÁRIO E TOTAL BASEADO NO MODO SELECIONADO
+    // 10. PREÇOS UNITÁRIOS E TOTAIS
     const lucroLiquidoUnit = custoBaseMargemUnit * margemPercentual;
     const precoVendaUnit = custoBaseMargemUnit + lucroLiquidoUnit + custoManutencaoUnit;
     const precoVendaTotal = precoVendaUnit * qtdPecas;
@@ -462,27 +503,36 @@ function calcularOrcamento3D() {
     const subtotalInsumosTotal = (subtotalDiretoUnit + custoFalhasUnit) * qtdPecas;
     const lucroLiquidoTotalLote = lucroLiquidoUnit * qtdPecas;
 
-    // 11. CÁLCULO DAS CAIXINHAS DO MERCADO PAGO RECALCULADAS COM BASE NA VENDA SELECIONADA
+    // CÁLCULO DAS CAIXINHAS DO MERCADO PAGO PARA O TOTAL DO PEDIDO
     const boxInsumos = subtotalInsumosTotal;
     const boxPoupanca = custoManutencaoTotal;
     const boxReinvestimento = lucroLiquidoTotalLote / 2;
     const boxBolso = (lucroLiquidoTotalLote / 2) + custoMaoObraTotal;
 
-    // CACHE DE CÁLCULO
+    // CACHE DO CÁLCULO DADOS COMPLETOS
     calcCache = {
         modoVenda,
+        nomeProjeto: inputNomeProjeto.value.trim() || 'Projeto 3D',
         qtdPecas,
         precoVendaUnit,
         precoVendaTotal,
+        custoTotalProducaoUnit,
+        custoTotalProducaoLote,
+        lucroLiquidoUnit,
         lucroLiquidoTotalLote,
-        tempoTotalHorasUnit
+        margemPercentual: parseFloat(inputMargemLucro.value) || 0,
+        tempoTotalHorasUnit,
+        boxInsumos,
+        boxPoupanca,
+        boxReinvestimento,
+        boxBolso
     };
 
     // ATUALIZAÇÃO DA TELA DO RESULTADO
     if (resHeroLabel) {
         resHeroLabel.textContent = isAtacado 
             ? `Preço Sugerido (Lote Atacado - ${qtdPecas} un)`
-            : `Preço Sugerido (Varejo - ${qtdPecas} un)`;
+            : `Preço Sugerido (${qtdPecas} unidade${qtdPecas > 1 ? 's' : ''})`;
     }
 
     if (priceHeroCard) {
@@ -492,6 +542,16 @@ function calcularOrcamento3D() {
     resPrecoVenda.textContent = formatarMoeda(precoVendaTotal);
     resBadgeLucro.textContent = `Lucro Líquido: ${formatarMoeda(lucroLiquidoTotalLote)} (+${parseFloat(inputMargemLucro.value) || 0}%)`;
 
+    // EXIBE AS MÉTRICAS UNITÁRIAS QUANDO HÁ MAIS DE 1 PEÇA
+    if (qtdPecas > 1 && boxUnitMetrics) {
+        unitValVenda.textContent = formatarMoeda(precoVendaUnit);
+        unitValCusto.textContent = formatarMoeda(custoTotalProducaoUnit);
+        unitValLucro.textContent = formatarMoeda(lucroLiquidoUnit);
+        boxUnitMetrics.classList.remove('hidden');
+    } else if (boxUnitMetrics) {
+        boxUnitMetrics.classList.add('hidden');
+    }
+
     // TELA DE CUSTOS INTERNOS
     resCustoFilamento.textContent = formatarMoeda(custoFilamentoTotal);
     resCustoEnergia.textContent = formatarMoeda(custoEnergiaTotal);
@@ -500,21 +560,16 @@ function calcularOrcamento3D() {
     resCustoTotal.textContent = formatarMoeda(custoTotalProducaoLote);
     resLucroLiquido.textContent = formatarMoeda(lucroLiquidoTotalLote);
 
-    // ATUALIZAÇÃO RECALCULADA DAS CAIXINHAS
+    // ATUALIZAÇÃO DAS CAIXINHAS
     if (resBoxInsumos) resBoxInsumos.textContent = formatarMoeda(boxInsumos);
     if (resBoxPoupanca) resBoxPoupanca.textContent = formatarMoeda(boxPoupanca);
     if (resBoxReinvestimento) resBoxReinvestimento.textContent = formatarMoeda(boxReinvestimento);
     if (resBoxBolso) resBoxBolso.textContent = formatarMoeda(boxBolso);
 }
 
-// COPIAR ORÇAMENTO PARA O CLIENTE
+// COPIAR ORÇAMENTO PARA O CLIENTE (SEM INSUMO E SEM GRAMAS)
 function copiarResumoCliente() {
     const nomeProjeto = inputNomeProjeto.value.trim() || 'Impressão Peça 3D';
-    const filamentoId = selectFilamentoCalc.value;
-    const filamento = filamentos.find(f => f.id === filamentoId);
-    
-    const materialTexto = filamento ? `${filamento.tipo} (${filamento.corNome})` : 'Material Especial 3D';
-    const peso = inputPesoUsado.value;
 
     const {
         modoVenda,
@@ -531,33 +586,30 @@ function copiarResumoCliente() {
     let textoCliente = '';
 
     if (modoVenda === 'varejo') {
-        // VAREJO LIMPO: Sem menção à palavra varejo nem tabelas
         const detalheQtd = qtdPecas > 1 ? ` (${qtdPecas} unidades)` : '';
+        const detalheUnit = qtdPecas > 1 ? `\n🏷️ *Valor Unitário:* ${formatarMoeda(precoVendaUnit)} / un` : '';
+
         textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
 --------------------------------------------------
-📦 *Projeto:* ${nomeProjeto}
-🧵 *Material:* ${materialTexto}
-⚖️ *Especificação:* aprox. ${peso}g por peça${detalheQtd}
+📦 *Projeto:* ${nomeProjeto}${detalheQtd}${detalheUnit}
 
 💰 *VALOR FINAL:* ${formatarMoeda(precoVendaTotal)}
 --------------------------------------------------
-📌 *Prazo de Produção:* ~${horasInt}h ${minInt}min
+📌 *Prazo Estimado de Produção:* ~${horasInt}h ${minInt}min
 📌 *Validade do Orçamento:* 7 dias
 
 🚀 *Rev Maker - Impressão 3D e Projetos*
 Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
     } else {
-        // ATACADO: Bonitinho, com destaque para a quantidade de peças e lote em atacado
         textoCliente = `✨ *ORÇAMENTO DE IMPRESSÃO 3D - REV MAKER* ✨
 --------------------------------------------------
 📦 *Projeto:* ${nomeProjeto}
-🧵 *Material:* ${materialTexto}
 📦 *Quantidade:* ${qtdPecas} peças (Lote em Atacado)
 
 🏷️ *VALOR UNITÁRIO (ATACADO):* ${formatarMoeda(precoVendaUnit)} / un
 💰 *VALOR TOTAL DO LOTE:* ${formatarMoeda(precoVendaTotal)}
 --------------------------------------------------
-📌 *Prazo de Produção:* ~${horasInt}h ${minInt}min
+📌 *Prazo Estimado de Produção:* ~${horasInt}h ${minInt}min
 📌 *Validade do Orçamento:* 7 dias
 
 🚀 *Rev Maker - Impressão 3D e Projetos*
@@ -565,20 +617,191 @@ Obrigado pelo contato! Fico à disposição para iniciar a produção.`;
     }
 
     navigator.clipboard.writeText(textoCliente).then(() => {
-        alert(`Orçamento de ${modoVenda.toUpperCase()} copiado com sucesso! Pronto para enviar no WhatsApp.`);
+        alert('Orçamento limpo para o CLIENTE copiado com sucesso! Pronto para colar no WhatsApp.');
     }).catch(err => {
         console.error('Erro ao copiar: ', err);
     });
 }
 
-// LÓGICA DE BACKUP E IMPORTAÇÃO
+// ABA DE GESTÃO DE VENDAS
+function initVendasEvents() {
+    if (formVendaManual) {
+        formVendaManual.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const valorTotal = parseFloat(inputVendaValorTotal.value) || 0;
+            const custoInsumos = parseFloat(inputVendaCustoInsumos.value) || 0;
+            
+            const lucroReal = Math.max(0, valorTotal - custoInsumos);
+            const margemPercentual = custoInsumos > 0 ? (lucroReal / custoInsumos) * 100 : 0;
+
+            const boxInsumos = custoInsumos;
+            const boxPoupanca = 0; // Depreciação não especificada manualmente
+            const boxReinvestimento = lucroReal / 2;
+            const boxBolso = lucroReal / 2;
+
+            const novaVenda = {
+                id: Date.now().toString(),
+                cliente: inputVendaCliente.value.trim(),
+                valorTotal: valorTotal,
+                custoTotal: custoInsumos,
+                lucroReal: lucroReal,
+                margemPercentual: parseFloat(margemPercentual.toFixed(1)),
+                data: inputVendaData.value,
+                boxInsumos,
+                boxPoupanca,
+                boxReinvestimento,
+                boxBolso
+            };
+
+            vendas.unshift(novaVenda);
+            salvarVendasNoLocalStorage();
+            renderizarVendas();
+
+            formVendaManual.reset();
+            inputVendaData.valueAsDate = new Date();
+            alert('Venda registrada com sucesso!');
+        });
+    }
+}
+
+// LANÇAR CÁLCULO DA CALCULADORA DIRETO NAS VENDAS (REGISTRO COMPLETO)
+function lancarCalculoNasVendas() {
+    if (!calcCache.precoVendaTotal || calcCache.precoVendaTotal <= 0) {
+        alert('Faça um cálculo válido na calculadora antes de lançar a venda!');
+        return;
+    }
+
+    const novaVenda = {
+        id: Date.now().toString(),
+        cliente: `${calcCache.nomeProjeto} (${calcCache.qtdPecas} un - ${calcCache.modoVenda.toUpperCase()})`,
+        valorTotal: calcCache.precoVendaTotal,
+        custoTotal: calcCache.custoTotalProducaoLote,
+        lucroReal: calcCache.lucroLiquidoTotalLote,
+        margemPercentual: calcCache.margemPercentual,
+        data: new Date().toISOString().split('T')[0],
+        boxInsumos: calcCache.boxInsumos,
+        boxPoupanca: calcCache.boxPoupanca,
+        boxReinvestimento: calcCache.boxReinvestimento,
+        boxBolso: calcCache.boxBolso
+    };
+
+    vendas.unshift(novaVenda);
+    salvarVendasNoLocalStorage();
+    renderizarVendas();
+
+    const vendasTabBtn = document.querySelector('[data-tab="tab-vendas"]');
+    if (vendasTabBtn) vendasTabBtn.click();
+
+    alert('Venda lançada no histórico e caixinhas atualizadas!');
+}
+
+function renderizarVendas() {
+    if (!containerVendas) return;
+
+    containerVendas.innerHTML = '';
+    countVendas.textContent = `${vendas.length} Vendas`;
+
+    if (vendas.length === 0) {
+        containerVendas.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+                <i class="fa-solid fa-receipt" style="font-size: 2rem; margin-bottom: 8px;"></i>
+                <p>Nenhuma venda registrada ainda.</p>
+            </div>
+        `;
+        atualizarDashboardVendas(0, 0, 0, 0, 0);
+        return;
+    }
+
+    let sumInsumos = 0;
+    let sumPoupanca = 0;
+    let sumReinvestimento = 0;
+    let sumBolso = 0;
+    let sumTotalFaturado = 0;
+
+    vendas.forEach(v => {
+        sumInsumos += v.boxInsumos;
+        sumPoupanca += v.boxPoupanca;
+        sumReinvestimento += v.boxReinvestimento;
+        sumBolso += v.boxBolso;
+        sumTotalFaturado += v.valorTotal;
+
+        const custoExibicao = v.custoTotal !== undefined ? formatarMoeda(v.custoTotal) : '-';
+        const lucroExibicao = v.lucroReal !== undefined ? formatarMoeda(v.lucroReal) : '-';
+        const margemExibicao = v.margemPercentual !== undefined ? `+${v.margemPercentual}%` : '';
+
+        const card = document.createElement('div');
+        card.className = 'venda-card-item';
+        card.innerHTML = `
+            <div class="venda-info-main">
+                <div class="venda-title">${v.cliente}</div>
+                <div class="venda-date">Data: ${formatarData(v.data)} | <strong>Venda Total: ${formatarMoeda(v.valorTotal)}</strong></div>
+            </div>
+
+            <div class="venda-financial-summary">
+                <div class="fin-summary-item">
+                    <span class="fin-summary-label">Custo:</span>
+                    <span class="fin-summary-val" style="color: #f59e0b;">${custoExibicao}</span>
+                </div>
+                <div class="fin-summary-item">
+                    <span class="fin-summary-label">Lucro Líquido:</span>
+                    <span class="fin-summary-val highlight-green">${lucroExibicao} (${margemExibicao})</span>
+                </div>
+            </div>
+
+            <div class="venda-caixinhas-mini">
+                <div class="mini-box">
+                    <span class="mini-box-label">Insumos</span>
+                    <span class="mini-box-val" style="color: #60a5fa;">${formatarMoeda(v.boxInsumos)}</span>
+                </div>
+                <div class="mini-box">
+                    <span class="mini-box-label">Poupança</span>
+                    <span class="mini-box-val" style="color: #c084fc;">${formatarMoeda(v.boxPoupanca)}</span>
+                </div>
+                <div class="mini-box">
+                    <span class="mini-box-label">Reinvest.</span>
+                    <span class="mini-box-val" style="color: #ff6b4a;">${formatarMoeda(v.boxReinvestimento)}</span>
+                </div>
+                <div class="mini-box">
+                    <span class="mini-box-label">Meu Bolso</span>
+                    <span class="mini-box-val" style="color: #34d399;">${formatarMoeda(v.boxBolso)}</span>
+                </div>
+            </div>
+
+            <button class="btn-icon" onclick="excluirVenda('${v.id}')" title="Excluir Venda">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        `;
+        containerVendas.appendChild(card);
+    });
+
+    atualizarDashboardVendas(sumInsumos, sumPoupanca, sumReinvestimento, sumBolso, sumTotalFaturado);
+}
+
+function atualizarDashboardVendas(insumos, poupanca, reinvestimento, bolso, totalFaturado) {
+    if (dashTotInsumos) dashTotInsumos.textContent = formatarMoeda(insumos);
+    if (dashTotPoupanca) dashTotPoupanca.textContent = formatarMoeda(poupanca);
+    if (dashTotReinvestimento) dashTotReinvestimento.textContent = formatarMoeda(reinvestimento);
+    if (dashTotBolso) dashTotBolso.textContent = formatarMoeda(bolso);
+    if (dashFaturamentoTotal) dashFaturamentoTotal.textContent = formatarMoeda(totalFaturado);
+}
+
+window.excluirVenda = function(id) {
+    if (confirm('Tem certeza que deseja excluir esta venda do histórico?')) {
+        vendas = vendas.filter(v => v.id !== id);
+        salvarVendasNoLocalStorage();
+        renderizarVendas();
+    }
+};
+
+// BACKUP UNIFICADO (FILAMENTOS + HISTÓRICO DE VENDAS EM UM ÚNICO ARQUIVO JSON)
 function initBackupEvents() {
     const btnExportar = document.getElementById('btn-exportar');
     const btnImportar = document.getElementById('btn-importar');
     const inputImportarJson = document.getElementById('input-importar-json');
 
     if (btnExportar) {
-        btnExportar.addEventListener('click', exportarFilamentos);
+        btnExportar.addEventListener('click', exportarBackupUnificado);
     }
     
     if (btnImportar && inputImportarJson) {
@@ -586,28 +809,36 @@ function initBackupEvents() {
             inputImportarJson.click();
         });
         
-        inputImportarJson.addEventListener('change', importarFilamentos);
+        inputImportarJson.addEventListener('change', importarBackupUnificado);
     }
 }
 
-function exportarFilamentos() {
-    if (!filamentos || filamentos.length === 0) {
-        alert('Nenhum filamento cadastrado para exportar!');
+function exportarBackupUnificado() {
+    if ((!filamentos || filamentos.length === 0) && (!vendas || vendas.length === 0)) {
+        alert('Nenhum dado cadastrado para exportar!');
         return;
     }
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(filamentos, null, 2));
+    const backupData = {
+        sistema: "Rev Maker - Gestão 3D",
+        versao: "2.0",
+        dataExportacao: new Date().toISOString(),
+        filamentos: filamentos,
+        vendas: vendas
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
     const downloadAnchor = document.createElement('a');
     const dataAtual = new Date().toISOString().split('T')[0];
 
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `revmaker_filamentos_${dataAtual}.json`);
+    downloadAnchor.setAttribute("download", `revmaker_backup_completo_${dataAtual}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
 }
 
-function importarFilamentos(e) {
+function importarBackupUnificado(e) {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -617,32 +848,44 @@ function importarFilamentos(e) {
         try {
             const dadosImportados = JSON.parse(event.target.result);
 
-            if (!Array.isArray(dadosImportados)) {
-                throw new Error('O arquivo precisa conter uma lista de filamentos.');
-            }
+            // COMPATIBILIDADE BACKUP ANTIGO (APENAS ARRAY DE FILAMENTOS)
+            if (Array.isArray(dadosImportados)) {
+                const confirma = confirm(`Deseja importar ${dadosImportados.length} filamento(s)? O histórico de vendas atual será mantido.`);
+                if (confirma) {
+                    filamentos = dadosImportados;
+                    salvarNoLocalStorage();
+                    renderizarListaFilamentos();
+                    atualizarSelectCalculadora();
+                    calcularOrcamento3D();
+                    alert('Filamentos importados com sucesso!');
+                }
+            } 
+            // BACKUP UNIFICADO COMPLETO (FILAMENTOS + VENDAS)
+            else if (dadosImportados && (dadosImportados.filamentos || dadosImportados.vendas)) {
+                const qtdFil = dadosImportados.filamentos ? dadosImportados.filamentos.length : 0;
+                const qtdVen = dadosImportados.vendas ? dadosImportados.vendas.length : 0;
 
-            const estruturaValida = dadosImportados.every(item => 
-                item.hasOwnProperty('marca') && 
-                item.hasOwnProperty('tipo') && 
-                item.hasOwnProperty('precoPago')
-            );
+                const confirma = confirm(`Deseja importar este backup unificado? (${qtdFil} filamento(s) e ${qtdVen} venda(s)).\n\nIsso substituirá seus dados atuais no sistema.`);
+                
+                if (confirma) {
+                    if (Array.isArray(dadosImportados.filamentos)) filamentos = dadosImportados.filamentos;
+                    if (Array.isArray(dadosImportados.vendas)) vendas = dadosImportados.vendas;
 
-            if (!estruturaValida) {
-                throw new Error('O formato do arquivo JSON é incompatível.');
-            }
+                    salvarNoLocalStorage();
+                    salvarVendasNoLocalStorage();
 
-            const confirma = confirm(`Deseja importar ${dadosImportados.length} filamento(s)? Isso substituirá o seu estoque atual.`);
-            
-            if (confirma) {
-                filamentos = dadosImportados;
-                salvarNoLocalStorage();
-                renderizarListaFilamentos();
-                atualizarSelectCalculadora();
-                calcularOrcamento3D();
-                alert('Filamentos importados com sucesso!');
+                    renderizarListaFilamentos();
+                    atualizarSelectCalculadora();
+                    calcularOrcamento3D();
+                    renderizarVendas();
+
+                    alert('Backup unificado importado com sucesso!');
+                }
+            } else {
+                throw new Error('O formato do arquivo JSON de backup é incompatível.');
             }
         } catch (err) {
-            alert('Erro ao importar arquivo: ' + err.message);
+            alert('Erro ao importar backup: ' + err.message);
         }
 
         e.target.value = '';

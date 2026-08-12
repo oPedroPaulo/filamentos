@@ -1,4 +1,4 @@
-/* CSS DESIGN SYSTEM - REV MAKER BRANDING */
+/* CSS DESIGN SYSTEM - REV MAKER BRANDING (VERSÃO EXPANDIDA) */
 
 :root {
     /* Cores da Marca Rev Maker */
@@ -48,9 +48,10 @@ body {
     justify-content: center;
 }
 
+/* LAYOUT AMPLIADO (PROPORÇÃO MAIOR) */
 .app-container {
     width: 100%;
-    max-width: 1280px;
+    max-width: 1480px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -179,16 +180,16 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* GRIDS */
+/* GRIDS AMPLIADOS */
 .grid-two-columns {
     display: grid;
-    grid-template-columns: 420px 1fr;
+    grid-template-columns: 460px 1fr;
     gap: 24px;
 }
 
 .grid-calc-layout {
     display: grid;
-    grid-template-columns: 1fr 440px;
+    grid-template-columns: 1fr 480px;
     gap: 24px;
 }
 
@@ -284,13 +285,8 @@ input:focus, select:focus {
     border: 1px solid var(--border-color);
 }
 
-.toggle-mode-option {
-    cursor: pointer;
-}
-
-.toggle-mode-option input {
-    display: none;
-}
+.toggle-mode-option { cursor: pointer; }
+.toggle-mode-option input { display: none; }
 
 .mode-btn {
     display: flex;
@@ -454,6 +450,37 @@ input[type="color"] {
     color: #60a5fa;
 }
 
+/* MÉTRICAS UNITÁRIAS QUANDO QTD > 1 */
+.unit-breakdown-box {
+    background: rgba(0, 34, 255, 0.08);
+    border: 1px solid rgba(0, 34, 255, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px;
+}
+
+.unit-metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.unit-metric-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.unit-metric-val {
+    font-size: 0.92rem;
+    font-weight: 800;
+}
+
+.highlight-green { color: var(--accent-green); }
+
 /* BOTÕES E BADGES REV MAKER */
 .btn {
     padding: 11px 18px;
@@ -483,7 +510,7 @@ input[type="color"] {
     color: white;
     width: 100%;
     padding: 14px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     border-radius: var(--radius-md);
     box-shadow: 0 4px 15px rgba(255, 48, 0, 0.3);
@@ -500,6 +527,12 @@ input[type="color"] {
     padding: 7px 12px;
     font-size: 0.8rem;
     border-radius: var(--radius-sm);
+}
+
+.flex-gap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .header-actions {
@@ -769,6 +802,125 @@ input[type="color"] {
 .total-cost .item-value { font-size: 0.95rem; font-weight: 800; color: var(--accent-amber); }
 .profit-row .item-value { color: var(--accent-green); font-size: 0.95rem; font-weight: 800; }
 
+/* VENDAS TAB STYLES DETALHADOS */
+.style-mt { margin-top: 10px; }
+
+.total-faturado-box {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-faturado-box span {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.total-faturado-box strong {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--accent-green);
+}
+
+.vendas-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.venda-card-item {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    transition: var(--transition);
+}
+
+.venda-card-item:hover {
+    border-color: var(--rev-blue);
+}
+
+.venda-info-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.venda-title {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.venda-date {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.venda-financial-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.82rem;
+    background: var(--bg-card);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.fin-summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.fin-summary-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.fin-summary-val {
+    font-weight: 700;
+}
+
+.venda-caixinhas-mini {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mini-box {
+    background: var(--bg-card);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+}
+
+.mini-box-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+
+.mini-box-val {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
 .hidden { display: none !important; }
 
 /* RESPONSIVO */
@@ -776,6 +928,7 @@ input[type="color"] {
     .grid-two-columns, .grid-calc-layout { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
+    .venda-card-item { flex-direction: column; align-items: flex-start; }
     .caixinhas-grid { grid-template-columns: 1fr; }
 }

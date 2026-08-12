@@ -36,6 +36,9 @@
                 <button class="tab-btn" data-tab="tab-calculadora">
                     <i class="fa-solid fa-calculator"></i> Calculadora de Preços
                 </button>
+                <button class="tab-btn" data-tab="tab-vendas">
+                    <i class="fa-solid fa-chart-line"></i> Gestão de Vendas
+                </button>
             </nav>
         </header>
 
@@ -129,11 +132,11 @@
                             </div>
                             
                             <div class="header-actions">
-                                <button class="btn btn-secondary btn-sm" id="btn-exportar" type="button" title="Baixar backup em JSON">
-                                    <i class="fa-solid fa-download"></i> Exportar
+                                <button class="btn btn-secondary btn-sm" id="btn-exportar" type="button" title="Baixar backup unificado em JSON (Estoque e Vendas)">
+                                    <i class="fa-solid fa-download"></i> Exportar Backup
                                 </button>
-                                <button class="btn btn-secondary btn-sm" id="btn-importar" type="button" title="Carregar backup em JSON">
-                                    <i class="fa-solid fa-upload"></i> Importar
+                                <button class="btn btn-secondary btn-sm" id="btn-importar" type="button" title="Carregar backup unificado em JSON">
+                                    <i class="fa-solid fa-upload"></i> Importar Backup
                                 </button>
                                 <input type="file" id="input-importar-json" accept=".json" style="display: none;">
                                 <span class="badge badge-info" id="count-filamentos">0 Cadastrados</span>
@@ -282,6 +285,22 @@
                             <div class="price-badge" id="res-badge-lucro">Lucro Líquido: R$ 0,00 (+0%)</div>
                         </div>
 
+                        <!-- VISUALIZADOR UNITÁRIO QUANDO HÁ MAIS DE 1 UNIDADE -->
+                        <div class="unit-breakdown-box hidden" id="box-unit-metrics">
+                            <div class="unit-metric-item">
+                                <span class="unit-metric-label">Preço Unitário:</span>
+                                <span class="unit-metric-val highlight-green" id="unit-val-venda">R$ 0,00</span>
+                            </div>
+                            <div class="unit-metric-item">
+                                <span class="unit-metric-label">Custo Unitário:</span>
+                                <span class="unit-metric-val" id="unit-val-custo">R$ 0,00</span>
+                            </div>
+                            <div class="unit-metric-item">
+                                <span class="unit-metric-label">Lucro Unitário:</span>
+                                <span class="unit-metric-val" id="unit-val-lucro">R$ 0,00</span>
+                            </div>
+                        </div>
+
                         <!-- PAINEL DAS CAIXINHAS DO MERCADO PAGO -->
                         <div class="caixinhas-container">
                             <div class="breakdown-title"><i class="fa-solid fa-vault icon-rev-blue"></i> Divisão para Caixinhas (Mercado Pago)</div>
@@ -320,23 +339,23 @@
                             </div>
                         </div>
 
-                        <!-- Detalhamento Interno do Pedido -->
+                        <!-- Detalhamento Interno da Produção -->
                         <div class="internal-breakdown">
                             <div class="breakdown-title"><i class="fa-solid fa-lock"></i> Custos Internos da Produção</div>
                             
                             <div class="breakdown-list">
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-spool color-icon1"></i> Filamento Gastos</span>
+                                    <span class="item-title"><i class="fa-solid fa-spool color-icon1"></i> Filamento Total</span>
                                     <span class="item-value" id="res-custo-filamento">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-bolt color-icon2"></i> Energia Elétrica</span>
+                                    <span class="item-title"><i class="fa-solid fa-bolt color-icon2"></i> Energia Elétrica Total</span>
                                     <span class="item-value" id="res-custo-energia">R$ 0,00</span>
                                 </div>
 
                                 <div class="breakdown-item">
-                                    <span class="item-title"><i class="fa-solid fa-wrench color-icon3"></i> Depreciação Máquina</span>
+                                    <span class="item-title"><i class="fa-solid fa-wrench color-icon3"></i> Depreciação Máquina Total</span>
                                     <span class="item-value" id="res-custo-manutencao">R$ 0,00</span>
                                 </div>
 
@@ -357,14 +376,125 @@
                             </div>
                         </div>
 
-                        <!-- Botão Copiar -->
-                        <div class="summary-footer-actions">
+                        <!-- Ações de Ação Rápida -->
+                        <div class="summary-footer-actions flex-gap">
                             <button class="btn btn-primary-rev" id="btn-copiar-resumo">
                                 <i class="fa-solid fa-paper-plane"></i> Copiar Orçamento do Cliente
+                            </button>
+                            <button class="btn btn-secondary" id="btn-lancar-venda" title="Lança este orçamento direto no controle de vendas">
+                                <i class="fa-solid fa-cart-plus icon-rev-blue"></i> Lançar no Histórico de Vendas
                             </button>
                         </div>
                     </div>
 
+                </div>
+            </section>
+
+
+            <!-- ABA 3: GESTÃO DE VENDAS & CAIXINHAS -->
+            <section id="tab-vendas" class="tab-content">
+                <div class="grid-calc-layout">
+                    
+                    <!-- Lançamento Manual / Painel -->
+                    <div class="card form-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-cart-shopping icon-rev-blue"></i> Registrar Nova Venda</h2>
+                            <p>Lance vendas manuais para ter o controle exato da divisão das caixinhas.</p>
+                        </div>
+
+                        <form id="form-venda-manual">
+                            <div class="form-group">
+                                <label for="venda-cliente"><i class="fa-solid fa-user"></i> Cliente / Nome do Projeto</label>
+                                <input type="text" id="venda-cliente" placeholder="Ex: João - Suporte 3D" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="venda-valor-total"><i class="fa-solid fa-brazilian-real-sign"></i> Valor Total Vendido (R$)</label>
+                                    <input type="number" id="venda-valor-total" placeholder="75.00" min="0.01" step="0.01" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="venda-custo-insumos"><i class="fa-solid fa-boxes-packing"></i> Custo de Insumos/Material (R$)</label>
+                                    <input type="number" id="venda-custo-insumos" placeholder="20.00" min="0" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="venda-data"><i class="fa-solid fa-calendar"></i> Data da Venda</label>
+                                <input type="date" id="venda-data" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                                <i class="fa-solid fa-check-double"></i> Cadastrar Venda no Caixa
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Acumulado das Caixinhas -->
+                    <div class="card result-card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-vault icon-rev-blue"></i> Acumulado Geral das Caixinhas</h2>
+                            <p>Soma total de onde o dinheiro da Rev Maker deve estar</p>
+                        </div>
+
+                        <div class="caixinhas-container" style="background: rgba(11, 15, 25, 0.5);">
+                            <div class="caixinhas-grid">
+                                <div class="caixinha-card caixinha-insumos">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-boxes-packing"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">1. Reposição Insumos</span>
+                                        <span class="caixinha-value" id="dash-tot-insumos">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-poupanca">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">2. Poupança Impressora</span>
+                                        <span class="caixinha-value" id="dash-tot-poupanca">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-reinvestimento">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-rocket"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">3. Reinvestimento Rev</span>
+                                        <span class="caixinha-value" id="dash-tot-reinvestimento">R$ 0,00</span>
+                                    </div>
+                                </div>
+
+                                <div class="caixinha-card caixinha-bolso">
+                                    <div class="caixinha-icon"><i class="fa-solid fa-wallet"></i></div>
+                                    <div class="caixinha-info">
+                                        <span class="caixinha-label">4. Meu Bolso (Pró-Labore)</span>
+                                        <span class="caixinha-value" id="dash-tot-bolso">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="total-faturado-box">
+                            <span>FATURAMENTO TOTAL ACUMULADO:</span>
+                            <strong id="dash-faturamento-total">R$ 0,00</strong>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- HISTÓRICO DE VENDAS REGISTRADAS -->
+                <div class="card list-card style-mt">
+                    <div class="card-header space-between">
+                        <div>
+                            <h2><i class="fa-solid fa-clock-rotate-left icon-rev-purple"></i> Histórico de Vendas Realizadas</h2>
+                            <p>Acompanhamento detalhado com custos, lucro e margem de cada pedido</p>
+                        </div>
+                        <span class="badge badge-info" id="count-vendas">0 Vendas</span>
+                    </div>
+
+                    <div class="vendas-list-container" id="container-vendas">
+                        <!-- Tabela / Cards de vendas injetados via JS -->
+                    </div>
                 </div>
             </section>
 
